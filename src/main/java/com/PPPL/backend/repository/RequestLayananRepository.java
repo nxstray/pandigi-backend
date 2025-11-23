@@ -1,9 +1,11 @@
 package com.PPPL.backend.repository;
 
-import com.PPPL.backend.entity.RequestLayanan;
-import com.PPPL.backend.entity.StatusRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.PPPL.backend.model.RequestLayanan;
+import com.PPPL.backend.model.StatusRequest;
+
 import java.util.List;
 
 @Repository
