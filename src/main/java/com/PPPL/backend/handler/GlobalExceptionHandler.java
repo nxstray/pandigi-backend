@@ -23,6 +23,14 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(ex.getMessage()));
     }
     
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+            .body(ApiResponse.error(ex.getMessage()));
+    }
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
         return ResponseEntity
