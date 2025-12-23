@@ -10,13 +10,10 @@ import java.util.List;
 
 @Repository
 public interface RequestLayananRepository extends JpaRepository<RequestLayanan, Integer> {
-    
+
     List<RequestLayanan> findByStatus(StatusRequest status);
-    
-    List<RequestLayanan> findByKlien_IdKlien(Integer idKlien);
-    
-    List<RequestLayanan> findByLayanan_IdLayanan(Integer idLayanan);
-    
-    // buat mendapatkan request yang sedang menunggu verifikasi
+
     List<RequestLayanan> findByStatusOrderByTglRequestAsc(StatusRequest status);
+
+    long countByStatus(StatusRequest status);
 }
