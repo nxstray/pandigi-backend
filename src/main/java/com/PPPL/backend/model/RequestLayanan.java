@@ -27,7 +27,7 @@ public class RequestLayanan {
     private Klien klien;
     
     @Column(name = "tgl_request")
-    @Temporal(TemporalType.DATE)
+    @Temporal(TemporalType.TIMESTAMP)
     private Date tglRequest;
     
     @Enumerated(EnumType.STRING)
