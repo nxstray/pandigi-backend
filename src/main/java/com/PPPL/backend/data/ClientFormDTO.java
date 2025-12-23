@@ -8,14 +8,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClientFormDTO {
+    // Personal Info
     private String firstName;
     private String lastName;
     private String email;
     private String phoneNumber;
-    private String topic;
-    private String message;
     
+    // Service Request
+    private Integer idLayanan;
+    private String message;     // Mapping ke RequestLayanan.pesan
+    
+    // Additional Lead Scoring Data
     private String perusahaan;
     private String anggaran;
     private String waktuImplementasi;
+    
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
 }
