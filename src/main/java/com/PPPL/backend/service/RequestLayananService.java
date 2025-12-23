@@ -1,5 +1,6 @@
 package com.PPPL.backend.service;
 
+import com.PPPL.backend.data.RequestLayananStatisticsDTO;
 import com.PPPL.backend.model.*;
 import com.PPPL.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class RequestLayananService {
 
     @Autowired
     private LayananRepository layananRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     /**       
      * Helper method to get a pending request and validate its status.
@@ -46,6 +50,7 @@ public class RequestLayananService {
     **/
     @Transactional
     public RequestLayanan approve(Integer idRequest) {
+
         RequestLayanan request = getPendingRequest(idRequest);
 
         request.setStatus(StatusRequest.VERIFIKASI);
@@ -53,30 +58,55 @@ public class RequestLayananService {
         request.setKeteranganPenolakan(null);
 
         Klien klien = request.getKlien();
-        if (klien.getStatus() == StatusKlien.BELUM) {
-            klien.setStatus(StatusKlien.AKTIF);
-            klienRepository.save(klien);
-        }
+        klien.setStatus(StatusKlien.BELUM);
+        klienRepository.save(klien);
 
         return requestLayananRepository.save(request);
     }
-
+    
     /**       
      * Helper method to get a pending request and validate its status.
     **/
     @Transactional
     public RequestLayanan reject(Integer idRequest, String alasan) {
+
         if (alasan == null || alasan.trim().isEmpty()) {
             throw new RuntimeException("Alasan penolakan wajib diisi");
         }
 
         RequestLayanan request = getPendingRequest(idRequest);
+
         request.setStatus(StatusRequest.DITOLAK);
         request.setTglVerifikasi(new Date());
         request.setKeteranganPenolakan(alasan);
 
-        return requestLayananRepository.save(request);
+        RequestLayanan saved = requestLayananRepository.save(request);
+
+        Klien klien = saved.getKlien();
+        Layanan layanan = saved.getLayanan();
+
+        notificationService.createNotificationAndSendEmail(
+            "REQUEST_DITOLAK",
+            "Request Layanan Ditolak",
+            """
+            Halo %s,
+
+            Mohon maaf, request layanan "%s" tidak dapat kami proses.
+
+            Alasan penolakan:
+            %s
+            """.formatted(
+                klien.getNamaKlien(),
+                layanan.getNamaLayanan(),
+                alasan
+            ),
+            "/dashboard/request-layanan",
+            klien.getEmailKlien()
+        );
+
+        return saved;
     }
+
 
     /**       
      * Helper method to get a pending request and validate its status.
@@ -95,8 +125,17 @@ public class RequestLayananService {
     }
 
     /**       
-     * Helper method to get a pending request and validate its status.
+     * Returns statistics of request layanan.
     **/
+    public RequestLayananStatisticsDTO getStatistics() {
+        return new RequestLayananStatisticsDTO(
+            requestLayananRepository.count(),
+            requestLayananRepository.countByStatus(StatusRequest.MENUNGGU_VERIFIKASI),
+            requestLayananRepository.countByStatus(StatusRequest.VERIFIKASI),
+            requestLayananRepository.countByStatus(StatusRequest.DITOLAK)
+        );
+    }
+
     private RequestLayanan getPendingRequest(Integer idRequest) {
         RequestLayanan request = findById(idRequest);
 
