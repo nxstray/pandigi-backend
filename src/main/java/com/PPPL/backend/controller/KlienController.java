@@ -4,12 +4,11 @@ import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.KlienDTO;
 import com.PPPL.backend.model.Klien;
 import com.PPPL.backend.model.StatusKlien;
-import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.repository.KlienRepository;
-import com.PPPL.backend.util.EntityMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -17,82 +16,222 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/klien")
+@RequestMapping("/api/admin/klien")
 @CrossOrigin(origins = "http://localhost:4200")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class KlienController {
     
     @Autowired
     private KlienRepository klienRepository;
     
-    @Autowired
-    private EntityMapper mapper;
-    
+    /**
+     * Get all klien
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<List<KlienDTO>>> getAllKlien() {
-        List<KlienDTO> klienList = klienRepository.findAll()
+
+        List<KlienDTO> klien = klienRepository
+            .findKlienYangTerverifikasi()
             .stream()
-            .map(mapper::toDTO)
+            .map(this::convertToDTO)
             .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(klienList));
+
+        return ResponseEntity.ok(ApiResponse.success(klien));
     }
     
+    /**
+     * Get klien by ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<KlienDTO>> getKlienById(@PathVariable Integer id) {
-        Klien klien = klienRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Klien tidak ditemukan dengan ID: " + id));
-        return ResponseEntity.ok(ApiResponse.success(mapper.toDTO(klien)));
-    }
-    
-    @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponse<List<KlienDTO>>> getKlienByStatus(@PathVariable StatusKlien status) {
-        List<KlienDTO> klienList = klienRepository.findByStatus(status)
-            .stream()
-            .map(mapper::toDTO)
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(klienList));
-    }
-    
-    @PostMapping
-    public ResponseEntity<ApiResponse<KlienDTO>> createKlien(@RequestBody KlienDTO dto) {
-        if (klienRepository.existsByEmailKlien(dto.getEmailKlien())) {
+        try {
+            Klien klien = klienRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            return ResponseEntity.ok(ApiResponse.success(convertToDTO(klien)));
+        } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Email sudah terdaftar"));
+                .body(ApiResponse.error(e.getMessage()));
         }
-        
-        Klien klien = new Klien();
-        klien.setNamaKlien(dto.getNamaKlien());
-        klien.setEmailKlien(dto.getEmailKlien());
-        klien.setNoTelp(dto.getNoTelp());
-        klien.setStatus(StatusKlien.BELUM); // default status
-        klien.setTglRequest(new Date());
-        
-        Klien saved = klienRepository.save(klien);
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("Klien berhasil dibuat", mapper.toDTO(saved)));
     }
     
+    /**
+     * Create new klien
+     */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<KlienDTO>> createKlien(@RequestBody KlienDTO dto) {
+        try {
+            // Validasi
+            if (dto.getNamaKlien() == null || dto.getNamaKlien().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Nama klien wajib diisi"));
+            }
+            
+            if (dto.getEmailKlien() == null || dto.getEmailKlien().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Email wajib diisi"));
+            }
+            
+            // Check duplicate email
+            if (klienRepository.findByEmailKlien(dto.getEmailKlien()).isPresent()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Email sudah terdaftar"));
+            }
+            
+            // Create entity
+            Klien klien = new Klien();
+            klien.setNamaKlien(dto.getNamaKlien());
+            klien.setEmailKlien(dto.getEmailKlien());
+            klien.setNoTelp(dto.getNoTelp());
+            klien.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusKlien.BELUM);
+            klien.setTglRequest(dto.getTglRequest() != null ? dto.getTglRequest() : new Date());
+            
+            Klien saved = klienRepository.save(klien);
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Klien berhasil ditambahkan", convertToDTO(saved)));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal menambah klien: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Update klien
+     */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<KlienDTO>> updateKlien(
             @PathVariable Integer id, 
             @RequestBody KlienDTO dto) {
-        Klien klien = klienRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Klien tidak ditemukan"));
-        
-        klien.setNamaKlien(dto.getNamaKlien());
-        klien.setEmailKlien(dto.getEmailKlien());
-        klien.setNoTelp(dto.getNoTelp());
-        klien.setStatus(dto.getStatus());
-        
-        Klien updated = klienRepository.save(klien);
-        return ResponseEntity.ok(ApiResponse.success("Klien berhasil diupdate", mapper.toDTO(updated)));
+        try {
+            Klien klien = klienRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            // Check duplicate email (exclude current)
+            klienRepository.findByEmailKlien(dto.getEmailKlien()).ifPresent(existing -> {
+                if (!existing.getIdKlien().equals(id)) {
+                    throw new RuntimeException("Email sudah terdaftar");
+                }
+            });
+            
+            // Update fields
+            klien.setNamaKlien(dto.getNamaKlien());
+            klien.setEmailKlien(dto.getEmailKlien());
+            klien.setNoTelp(dto.getNoTelp());
+            if (dto.getStatus() != null) {
+                klien.setStatus(dto.getStatus());
+            }
+            
+            Klien updated = klienRepository.save(klien);
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("Klien berhasil diupdate", convertToDTO(updated)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal update klien: " + e.getMessage()));
+        }
     }
     
+    /**
+     * Delete klien
+     */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteKlien(@PathVariable Integer id) {
-        if (!klienRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Klien tidak ditemukan");
+        try {
+            Klien klien = klienRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            // Check if klien has requests
+            if (!klien.getRequestLayananSet().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(
+                        "Klien tidak dapat dihapus karena masih memiliki " + 
+                        klien.getRequestLayananSet().size() + " request layanan"));
+            }
+            
+            klienRepository.delete(klien);
+            
+            return ResponseEntity.ok(ApiResponse.success("Klien berhasil dihapus", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal hapus klien: " + e.getMessage()));
         }
-        klienRepository.deleteById(id);
-        return ResponseEntity.ok(ApiResponse.success("Klien berhasil dihapus", null));
+    }
+    
+    /**
+     * Search klien
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<KlienDTO>>> searchKlien(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) StatusKlien status) {
+        try {
+            List<Klien> klien = klienRepository.findAll();
+            
+            // Filter by keyword
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String kw = keyword.toLowerCase();
+                klien = klien.stream()
+                    .filter(k -> k.getNamaKlien().toLowerCase().contains(kw) ||
+                               k.getEmailKlien().toLowerCase().contains(kw))
+                    .collect(Collectors.toList());
+            }
+            
+            // Filter by status
+            if (status != null) {
+                klien = klien.stream()
+                    .filter(k -> k.getStatus() == status)
+                    .collect(Collectors.toList());
+            }
+            
+            List<KlienDTO> result = klien.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal search klien: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Update klien status
+     */
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<KlienDTO>> updateKlienStatus(
+            @PathVariable Integer id,
+            @RequestParam StatusKlien status) {
+        try {
+            Klien klien = klienRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            klien.setStatus(status);
+            Klien updated = klienRepository.save(klien);
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("Status klien berhasil diupdate", convertToDTO(updated)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal update status: " + e.getMessage()));
+        }
+    }
+    
+    // ========== HELPER METHODS ==========
+    
+    private KlienDTO convertToDTO(Klien klien) {
+        KlienDTO dto = new KlienDTO();
+        dto.setIdKlien(klien.getIdKlien());
+        dto.setNamaKlien(klien.getNamaKlien());
+        dto.setEmailKlien(klien.getEmailKlien());
+        dto.setNoTelp(klien.getNoTelp());
+        dto.setStatus(klien.getStatus());
+        dto.setTglRequest(klien.getTglRequest());
+        return dto;
     }
 }
