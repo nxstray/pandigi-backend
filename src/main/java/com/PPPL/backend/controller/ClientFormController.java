@@ -2,6 +2,7 @@ package com.PPPL.backend.controller;
 
 import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.ClientFormDTO;
+import com.PPPL.backend.event.NotificationEventPublisher;
 import com.PPPL.backend.model.Klien;
 import com.PPPL.backend.model.Layanan;
 import com.PPPL.backend.model.RequestLayanan;
@@ -10,7 +11,7 @@ import com.PPPL.backend.model.StatusRequest;
 import com.PPPL.backend.repository.KlienRepository;
 import com.PPPL.backend.repository.LayananRepository;
 import com.PPPL.backend.repository.RequestLayananRepository;
-import com.PPPL.backend.service.NotificationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/public/form")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class ClientFormController {
     
     @Autowired
@@ -35,7 +37,7 @@ public class ClientFormController {
     private RequestLayananRepository requestLayananRepository;
     
     @Autowired
-    private NotificationService notificationService;
+    private NotificationEventPublisher notificationPublisher;
     
     /**
      * Submit form dari client - otomatis create Klien + RequestLayanan
@@ -69,6 +71,8 @@ public class ClientFormController {
                 klien.setTglRequest(new Date());
                 klien = klienRepository.save(klien);
                 isNewClient = true;
+                
+                log.info("New client created: {}", klien.getNamaKlien());
             }
             
             // 4. Cari layanan berdasarkan ID
@@ -92,24 +96,28 @@ public class ClientFormController {
             
             RequestLayanan savedRequest = requestLayananRepository.save(request);
             
-            // 6. CREATE NOTIFICATIONS
+            log.info("Request layanan created: {} - {}", savedRequest.getIdRequest(), layanan.getNamaLayanan());
+            
+            // 6. PUBLISH REALTIME NOTIFICATIONS via RabbitMQ
             if (isNewClient) {
                 // Notification for new client
-                notificationService.createNotification(
+                notificationPublisher.publishAdminNotification(
                     "NEW_CLIENT",
                     "Klien Baru: " + klien.getNamaKlien(),
                     "Klien baru telah mendaftar untuk layanan " + layanan.getNamaLayanan(),
                     "/admin/klien"
                 );
+                log.info("Published NEW_CLIENT notification");
             }
             
-            // Notification for pending verification
-            notificationService.createNotification(
+            // Notification for pending verification (SELALU KIRIM)
+            notificationPublisher.publishAdminNotification(
                 "PENDING_VERIFICATION",
                 "Request Perlu Verifikasi",
                 klien.getNamaKlien() + " meminta layanan " + layanan.getNamaLayanan() + ". Menunggu verifikasi.",
-                "/admin/request-layanan"
+                "/admin/request-layanan/" + savedRequest.getIdRequest()
             );
+            log.info("Published PENDING_VERIFICATION notification");
             
             // 7. Return success dengan data response
             RequestSubmitResponse response = new RequestSubmitResponse(
@@ -126,7 +134,7 @@ public class ClientFormController {
                 ));
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error submitting form: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Terjadi kesalahan: " + e.getMessage()));
         }
