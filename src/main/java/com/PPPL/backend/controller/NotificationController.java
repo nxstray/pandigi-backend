@@ -2,6 +2,7 @@ package com.PPPL.backend.controller;
 
 import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.NotificationDTO;
+import com.PPPL.backend.event.NotificationEventPublisher;
 import com.PPPL.backend.service.EmailService;
 import com.PPPL.backend.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +24,29 @@ public class NotificationController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private NotificationEventPublisher notificationPublisher;
     
     /**
-     * Get all notifications
+     * TEST REALTIME NOTIFICATION VIA RABBITMQ + WEBSOCKET
      */
+    @PostMapping("/test-realtime")
+    public ResponseEntity<ApiResponse<String>> testRealtimeNotification() {
+        try {
+            notificationPublisher.publishAdminNotification(
+                    "TEST",
+                    "Test Notifikasi Real-time",
+                    "Ini adalah test notifikasi real-time via RabbitMQ + WebSocket",
+                    "/admin/dashboard"
+            );
+            return ResponseEntity.ok(ApiResponse.success("Notifikasi real-time berhasil dikirim! Cek dashboard Anda."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal kirim notifikasi: " + e.getMessage()));
+        }
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationDTO>>> getAllNotifications() {
         try {
@@ -38,9 +58,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Get recent notifications (last 10)
-     */
     @GetMapping("/recent")
     public ResponseEntity<ApiResponse<List<NotificationDTO>>> getRecentNotifications() {
         try {
@@ -52,9 +69,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Get unread notifications
-     */
     @GetMapping("/unread")
     public ResponseEntity<ApiResponse<List<NotificationDTO>>> getUnreadNotifications() {
         try {
@@ -66,9 +80,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Get unread count
-     */
     @GetMapping("/unread/count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount() {
         try {
@@ -87,7 +98,7 @@ public class NotificationController {
             emailService.sendEmail(
                 to,
                 "TEST EMAIL SMTP",
-                "<h3>SMTP berhasil! </h3><p>Email ini dikirim dari backend</p>"
+                "<h3>SMTP berhasil!</h3><p>Email ini dikirim dari backend</p>"
             );
             return ResponseEntity.ok(ApiResponse.success("Email berhasil dikirim"));
         } catch (Exception e) {
@@ -96,9 +107,6 @@ public class NotificationController {
         }
     }
 
-    /**
-     * Mark notification as read
-     */
     @PutMapping("/{id}/read")
     public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable Integer id) {
         try {
@@ -110,9 +118,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Mark all notifications as read
-     */
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<String>> markAllAsRead() {
         try {
@@ -124,9 +129,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Delete notification
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteNotification(@PathVariable Integer id) {
         try {
@@ -138,9 +140,6 @@ public class NotificationController {
         }
     }
     
-    /**
-     * Delete old read notifications (cleanup)
-     */
     @DeleteMapping("/cleanup")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<String>> cleanupOldNotifications() {
