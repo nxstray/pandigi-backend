@@ -102,8 +102,11 @@ public class KaryawanController {
             karyawan.setNoTelp(dto.getNoTelp());
             karyawan.setJabatanPosisi(dto.getJabatanPosisi());
             karyawan.setManager(manager);
+            karyawan.setFotoProfil(dto.getFotoProfil());
             
             Karyawan saved = karyawanRepository.save(karyawan);
+            
+            System.out.println("Karyawan created with foto: " + (saved.getFotoProfil() != null ? "YES" : "NO"));
             
             return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Karyawan berhasil ditambahkan", convertToDTO(saved)));
@@ -144,11 +147,19 @@ public class KaryawanController {
             karyawan.setJabatanPosisi(dto.getJabatanPosisi());
             karyawan.setManager(manager);
             
+            // Update foto profil (only if provided)
+            if (dto.getFotoProfil() != null) {
+                karyawan.setFotoProfil(dto.getFotoProfil());
+            }
+            
             Karyawan updated = karyawanRepository.save(karyawan);
+            
+            System.out.println("Karyawan updated with foto: " + (updated.getFotoProfil() != null ? "YES" : "NO"));
             
             return ResponseEntity.ok(
                 ApiResponse.success("Karyawan berhasil diupdate", convertToDTO(updated)));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Gagal update karyawan: " + e.getMessage()));
         }
@@ -234,6 +245,9 @@ public class KaryawanController {
     
     // ========== HELPER METHODS ==========
     
+    /**
+     * Convert to DTO
+     */
     private KaryawanDTO convertToDTO(Karyawan karyawan) {
         KaryawanDTO dto = new KaryawanDTO();
         dto.setIdKaryawan(karyawan.getIdKaryawan());
@@ -243,6 +257,7 @@ public class KaryawanController {
         dto.setJabatanPosisi(karyawan.getJabatanPosisi());
         dto.setIdManager(karyawan.getManager().getIdManager());
         dto.setNamaManager(karyawan.getManager().getNamaManager());
+        dto.setFotoProfil(karyawan.getFotoProfil());
         return dto;
     }
 }
