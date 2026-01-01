@@ -14,5 +14,6 @@ public class KaryawanDTO {
     private String noTelp;
     private String jabatanPosisi;
     private Integer idManager;
-    private String namaManager; // buat display di FE
+    private String namaManager; // untuk display di FE
+    private String fotoProfil;
 }
