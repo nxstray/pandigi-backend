@@ -37,6 +37,12 @@ public class Admin {
     @Column(name = "is_active")
     private Boolean isActive = true;
     
+    @Column(name = "is_first_login")
+    private Boolean isFirstLogin = true;
+    
+    @Column(name = "foto_profil", columnDefinition = "TEXT")
+    private String fotoProfil;
+    
     @Column(name = "last_login")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastLogin;
