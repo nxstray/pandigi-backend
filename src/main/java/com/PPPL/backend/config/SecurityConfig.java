@@ -50,13 +50,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/ws/**", "/ws/**").permitAll()
                 
                 // Admin endpoints
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "MANAGER")
+                .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
                 .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "SUPER_ADMIN")
-                .requestMatchers("/api/karyawan/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/klien/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "MANAGER")
-                .requestMatchers("/api/layanan/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/request-layanan/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "MANAGER")
-                .requestMatchers("/api/rekap/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "MANAGER")
+                .requestMatchers("/api/karyawan/**").hasAnyRole("SUPER_ADMIN")
+                .requestMatchers("/api/klien/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
+                .requestMatchers("/api/layanan/**").hasAnyRole("SUPER_ADMIN")
+                .requestMatchers("/api/request-layanan/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
+                .requestMatchers("/api/rekap/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
                 
                 .anyRequest().authenticated()
             );
