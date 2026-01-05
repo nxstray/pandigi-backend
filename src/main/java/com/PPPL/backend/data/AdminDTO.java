@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +17,8 @@ public class AdminDTO {
     private String email;
     private AdminRole role;
     private Boolean isActive;
+    private Boolean isFirstLogin;
     private String fotoProfil;
-    private java.util.Date lastLogin;
-    private java.util.Date createdAt;
+    private Date lastLogin;
+    private Date createdAt;
 }

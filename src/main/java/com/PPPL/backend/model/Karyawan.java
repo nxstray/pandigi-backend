@@ -29,6 +29,9 @@ public class Karyawan {
     @Column(name = "jabatan_posisi", nullable = false, length = 50)
     private String jabatanPosisi;
     
+    @Column(name = "foto_profil", columnDefinition = "TEXT")
+    private String fotoProfil;
+    
     @ManyToOne
     @JoinColumn(name = "id_manager", nullable = false)
     private Manager manager;

@@ -16,13 +16,18 @@ public class LoginResponse {
     private String namaLengkap;
     private String email;
     private AdminRole role;
+    private String fotoProfil;
+    private Boolean isFirstLogin;
     
-    public LoginResponse(String token, Integer idAdmin, String username, String namaLengkap, String email, AdminRole role) {
+    public LoginResponse(String token, Integer idAdmin, String username, String namaLengkap, 
+                        String email, AdminRole role, String fotoProfil, Boolean isFirstLogin) {
         this.token = token;
         this.idAdmin = idAdmin;
         this.username = username;
         this.namaLengkap = namaLengkap;
         this.email = email;
         this.role = role;
+        this.fotoProfil = fotoProfil;
+        this.isFirstLogin = isFirstLogin;
     }
 }
