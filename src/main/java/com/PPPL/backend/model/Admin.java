@@ -32,7 +32,7 @@ public class Admin {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private AdminRole role = AdminRole.ADMIN;
+    private AdminRole role = AdminRole.MANAGER;
     
     @Column(name = "is_active")
     private Boolean isActive = true;
