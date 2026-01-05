@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Base64;
 import java.util.List;
 
 @RestController
@@ -37,18 +39,46 @@ public class AuthController {
     }
     
     /**
-     * Register admin (hanya SUPER_ADMIN)
+     * Upload foto profil
      */
-    @PostMapping("/register")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<AdminDTO>> registerAdmin(@RequestBody RegisterAdminRequest request) {
+    @PostMapping("/upload-photo")
+    public ResponseEntity<ApiResponse<String>> uploadFotoProfil(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam("file") MultipartFile file) {
         try {
-            AdminDTO admin = authService.registerAdmin(request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Admin berhasil didaftarkan", admin));
-        } catch (RuntimeException e) {
+            String token = authHeader.substring(7);
+            Integer idAdmin = jwtUtil.getAdminIdFromToken(token);
+            
+            // Validate file
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("File tidak boleh kosong"));
+            }
+            
+            // Validate file size (max 2MB)
+            if (file.getSize() > 2 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Ukuran file maksimal 2MB"));
+            }
+            
+            // Validate file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("File harus berupa gambar"));
+            }
+            
+            // Convert to Base64
+            byte[] bytes = file.getBytes();
+            String base64Image = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+            
+            // Save to database
+            authService.updateFotoProfil(idAdmin, base64Image);
+            
+            return ResponseEntity.ok(ApiResponse.success("Foto profil berhasil diupload", base64Image));
+        } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error(e.getMessage()));
+                .body(ApiResponse.error("Gagal upload foto: " + e.getMessage()));
         }
     }
     
