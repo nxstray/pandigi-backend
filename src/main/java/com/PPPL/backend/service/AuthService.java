@@ -3,9 +3,7 @@ package com.PPPL.backend.service;
 import com.PPPL.backend.data.AdminDTO;
 import com.PPPL.backend.data.LoginRequest;
 import com.PPPL.backend.data.LoginResponse;
-import com.PPPL.backend.data.RegisterAdminRequest;
 import com.PPPL.backend.model.Admin;
-import com.PPPL.backend.model.AdminRole;
 import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.security.JwtUtil;
@@ -31,29 +29,24 @@ public class AuthService {
     private JwtUtil jwtUtil;
     
     /**
-     * Login admin
+     * Login admin - UPDATED to include isFirstLogin
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        // Find admin by username
         Admin admin = adminRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new RuntimeException("Username atau password salah"));
         
-        // Check if admin is active
         if (!admin.getIsActive()) {
             throw new RuntimeException("Akun Anda telah dinonaktifkan. Hubungi super admin.");
         }
         
-        // Verify password
         if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
             throw new RuntimeException("Username atau password salah");
         }
         
-        // Update last login
         admin.setLastLogin(new Date());
         adminRepository.save(admin);
         
-        // Generate JWT token
         String token = jwtUtil.generateToken(
             admin.getUsername(), 
             admin.getIdAdmin(), 
@@ -66,55 +59,70 @@ public class AuthService {
             admin.getUsername(),
             admin.getNamaLengkap(),
             admin.getEmail(),
-            admin.getRole()
+            admin.getRole(),
+            admin.getFotoProfil(),
+            admin.getIsFirstLogin()
         );
     }
     
     /**
-     * Register new admin (hanya bisa dilakukan oleh SUPER_ADMIN)
+     * Update foto profil
      */
     @Transactional
-    public AdminDTO registerAdmin(RegisterAdminRequest request) {
-        // Check if username already exists
-        if (adminRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username sudah digunakan");
-        }
-        
-        // Check if email already exists
-        if (adminRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email sudah digunakan");
-        }
-        
-        // Create new admin
-        Admin admin = new Admin();
-        admin.setUsername(request.getUsername());
-        admin.setPassword(passwordEncoder.encode(request.getPassword()));
-        admin.setNamaLengkap(request.getNamaLengkap());
-        admin.setEmail(request.getEmail());
-        admin.setRole(request.getRole() != null ? request.getRole() : AdminRole.ADMIN);
-        admin.setIsActive(true);
-        
-        Admin saved = adminRepository.save(admin);
-        
-        return mapToDTO(saved);
+    public void updateFotoProfil(Integer idAdmin, String fotoProfil) {
+        Admin admin = adminRepository.findById(idAdmin)
+            .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
+        admin.setFotoProfil(fotoProfil);
+        adminRepository.save(admin);
     }
     
     /**
-     * Ubah password
+     * Change password - UPDATED to reset isFirstLogin flag
      */
     @Transactional
     public void changePassword(Integer idAdmin, String oldPassword, String newPassword) {
         Admin admin = adminRepository.findById(idAdmin)
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
         
-        // Verify old password
-        if (!passwordEncoder.matches(oldPassword, admin.getPassword())) {
-            throw new RuntimeException("Password lama tidak sesuai");
+        // Verify old password only if NOT first login
+        if (!admin.getIsFirstLogin()) {
+            if (!passwordEncoder.matches(oldPassword, admin.getPassword())) {
+                throw new RuntimeException("Password lama tidak sesuai");
+            }
         }
         
-        // Update password
+        // Validate new password strength
+        validatePasswordStrength(newPassword);
+        
+        // Update password and reset first login flag
         admin.setPassword(passwordEncoder.encode(newPassword));
+        admin.setIsFirstLogin(false);
         adminRepository.save(admin);
+    }
+    
+    /**
+     * Validate password strength
+     */
+    private void validatePasswordStrength(String password) {
+        if (password.length() < 8) {
+            throw new RuntimeException("Password minimal 8 karakter");
+        }
+        
+        if (!password.matches(".*[A-Z].*")) {
+            throw new RuntimeException("Password harus mengandung minimal 1 huruf besar");
+        }
+        
+        if (!password.matches(".*[a-z].*")) {
+            throw new RuntimeException("Password harus mengandung minimal 1 huruf kecil");
+        }
+        
+        if (!password.matches(".*\\d.*")) {
+            throw new RuntimeException("Password harus mengandung minimal 1 angka");
+        }
+        
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            throw new RuntimeException("Password harus mengandung minimal 1 karakter spesial");
+        }
     }
     
     /**
@@ -158,6 +166,9 @@ public class AuthService {
         adminRepository.save(admin);
     }
     
+    /**
+     * Map to DTO - UPDATED
+     */
     private AdminDTO mapToDTO(Admin admin) {
         AdminDTO dto = new AdminDTO();
         dto.setIdAdmin(admin.getIdAdmin());
@@ -166,6 +177,8 @@ public class AuthService {
         dto.setEmail(admin.getEmail());
         dto.setRole(admin.getRole());
         dto.setIsActive(admin.getIsActive());
+        dto.setIsFirstLogin(admin.getIsFirstLogin());
+        dto.setFotoProfil(admin.getFotoProfil());
         dto.setLastLogin(admin.getLastLogin());
         dto.setCreatedAt(admin.getCreatedAt());
         return dto;
