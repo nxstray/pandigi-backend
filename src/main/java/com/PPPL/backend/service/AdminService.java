@@ -142,7 +142,7 @@ public class AdminService {
                         padding: 20px;
                     }
                     .container {
-                        background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                        background: linear-gradient(135deg, #0C2B40 0%%, #1F4E79 100%%);
                         padding: 40px;
                         border-radius: 10px;
                         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -157,13 +157,13 @@ public class AdminService {
                         margin-bottom: 30px;
                     }
                     .logo h1 {
-                        color: #667eea;
+                        color: #0C2B40;
                         margin: 0;
                         font-size: 24px;
                     }
                     .credentials {
                         background: #f7fafc;
-                        border-left: 4px solid #667eea;
+                        border-left: 4px solid #0C2B40;
                         padding: 20px;
                         margin: 20px 0;
                         border-radius: 4px;
@@ -198,8 +198,8 @@ public class AdminService {
                     }
                     .btn {
                         display: inline-block;
-                        background: #667eea;
-                        color: white;
+                        background: #0C2B40;
+                        color: #ffffff !important;
                         padding: 12px 30px;
                         text-decoration: none;
                         border-radius: 5px;
@@ -229,7 +229,7 @@ public class AdminService {
                         content: "✓";
                         position: absolute;
                         left: 0;
-                        color: #667eea;
+                        color: #0C2B40;
                         font-weight: bold;
                     }
                 </style>
