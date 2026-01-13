@@ -118,6 +118,38 @@ public class AuthController {
                 .body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    /**
+     * Request password reset
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.requestPasswordReset(request.getEmail());
+            return ResponseEntity.ok(
+                ApiResponse.success("Link reset password telah dikirim ke email Anda. Silakan cek inbox/spam.", null)
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * Reset password with token
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok(
+                ApiResponse.success("Password berhasil direset. Silakan login dengan password baru Anda.", null)
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(e.getMessage()));
+        }
+    }
     
     /**
      * Validasi token
