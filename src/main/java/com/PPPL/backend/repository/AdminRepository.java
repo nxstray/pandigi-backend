@@ -17,4 +17,6 @@ public interface AdminRepository extends JpaRepository<Admin, Integer> {
     boolean existsByEmail(String email);
     
     Optional<Admin> findByUsernameAndIsActive(String username, Boolean isActive);
+    
+    Optional<Admin> findByResetToken(String resetToken);
 }
