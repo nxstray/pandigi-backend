@@ -42,6 +42,13 @@ public class Admin {
     
     @Column(name = "foto_profil", columnDefinition = "TEXT")
     private String fotoProfil;
+
+    @Column(name = "reset_token", length = 255)
+    private String resetToken;
+    
+    @Column(name = "reset_token_expiry")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date resetTokenExpiry;
     
     @Column(name = "last_login")
     @Temporal(TemporalType.TIMESTAMP)
