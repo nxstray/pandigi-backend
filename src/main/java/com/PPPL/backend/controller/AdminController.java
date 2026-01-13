@@ -30,9 +30,10 @@ public class AdminController {
                     "Manager berhasil didaftarkan. Email dengan kredensial telah dikirim.", 
                     manager
                 ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(e.toString()));
         }
     }
 }
