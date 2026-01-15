@@ -17,6 +17,8 @@ public class RequestLayananDetailDTO {
     private StatusRequest status;
     private Date tglVerifikasi;
     private String keteranganPenolakan;
+    private Integer approvedByManagerId;
+    private String approvedByName;
 
     // Klien
     private Integer idKlien;
