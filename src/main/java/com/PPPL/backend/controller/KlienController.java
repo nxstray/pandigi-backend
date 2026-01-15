@@ -3,6 +3,7 @@ package com.PPPL.backend.controller;
 import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.KlienDTO;
 import com.PPPL.backend.model.Klien;
+import com.PPPL.backend.model.Manager;
 import com.PPPL.backend.model.StatusKlien;
 import com.PPPL.backend.repository.KlienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -224,6 +225,9 @@ public class KlienController {
     
     // ========== HELPER METHODS ==========
     
+    /**
+     * Convert Klien entity to DTO - dengan info approved by manager
+     */
     private KlienDTO convertToDTO(Klien klien) {
         KlienDTO dto = new KlienDTO();
         dto.setIdKlien(klien.getIdKlien());
@@ -232,6 +236,18 @@ public class KlienController {
         dto.setNoTelp(klien.getNoTelp());
         dto.setStatus(klien.getStatus());
         dto.setTglRequest(klien.getTglRequest());
+        
+        // Get last approved manager
+        if (klien.getManagerSet() != null && !klien.getManagerSet().isEmpty()) {
+            Manager lastManager = klien.getManagerSet().stream()
+                    .findFirst()
+                    .orElse(null);
+            
+            if (lastManager != null) {
+                dto.setLastApprovedBy(lastManager.getNamaManager());
+            }
+        }
+        
         return dto;
     }
 }
