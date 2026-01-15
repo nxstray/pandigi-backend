@@ -13,12 +13,17 @@ public class WebConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
+        // Localhost untuk development
         config.addAllowedOrigin("http://localhost:4200");
         
+        // Production frontend URL (Vercel)
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            config.addAllowedOrigin(frontendUrl);
+        }
+        
         config.addAllowedMethod("*");
-        
         config.addAllowedHeader("*");
-        
         config.setAllowCredentials(true);
         
         source.registerCorsConfiguration("/**", config);
