@@ -23,8 +23,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        String[] allowedOrigins = frontendUrl != null 
+            ? new String[]{"http://localhost:4200", frontendUrl}
+            : new String[]{"http://localhost:4200"};
+            
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:4200")
+                .setAllowedOrigins(allowedOrigins)
                 .withSockJS();
     }
 
