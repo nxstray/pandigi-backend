@@ -16,4 +16,5 @@ public class KlienDTO {
     private String noTelp;
     private StatusKlien status;
     private Date tglRequest;
+    private String lastApprovedBy;
 }
