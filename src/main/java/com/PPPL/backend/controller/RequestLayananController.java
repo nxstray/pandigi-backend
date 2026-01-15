@@ -9,12 +9,14 @@ import com.PPPL.backend.model.RequestLayanan;
 import com.PPPL.backend.model.StatusRequest;
 import com.PPPL.backend.service.RequestLayananService;
 import com.PPPL.backend.repository.KlienRepository;
+import com.PPPL.backend.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +32,9 @@ public class RequestLayananController {
 
     @Autowired
     private KlienRepository klienRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     /**       
      * Get all request layanan
@@ -103,7 +108,7 @@ public class RequestLayananController {
 
     /**       
      * Get request layanan statistics
-     **/
+    **/
     @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<RequestLayananStatisticsDTO>> statistics() {
         return ResponseEntity.ok(
@@ -113,25 +118,60 @@ public class RequestLayananController {
 
     /**       
      * Get all active klien
-     **/    
-@GetMapping("/active-klien")
-public ResponseEntity<ApiResponse<List<Klien>>> getActiveKlien() {
-    return ResponseEntity.ok(
-        ApiResponse.success(
-            klienRepository.findKlienYangTerverifikasi()
-        )
-    );
-}
+    **/    
+    @GetMapping("/active-klien")
+    public ResponseEntity<ApiResponse<List<Klien>>> getActiveKlien() {
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                klienRepository.findKlienYangTerverifikasi()
+            )
+        );
+    }
 
     /**       
-     * Approve request layanan
+     * Approve request layanan - UPDATED dengan role check
     **/
     @PostMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<RequestLayananDTO>> approve(@PathVariable Integer id) {
-        RequestLayanan approved = requestLayananService.approve(id);
+    public ResponseEntity<ApiResponse<RequestLayananDTO>> approve(
+            @PathVariable Integer id,
+            HttpServletRequest request) {
+        
+        // Extract user ID dan role from JWT token
+        Integer userId = getUserIdFromRequest(request);
+        String role = getRoleFromRequest(request);
+        
+        RequestLayanan approved = requestLayananService.approve(id, userId, role);
         return ResponseEntity.ok(
                 ApiResponse.success("Request berhasil diverifikasi", toDTO(approved))
         );
+    }
+
+    /**       
+     * Helper: Extract User ID from JWT token
+    **/
+    private Integer getUserIdFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            return jwtUtil.getAdminIdFromToken(token);
+        }
+        
+        throw new RuntimeException("User ID tidak ditemukan dalam token");
+    }
+
+    /**       
+     * Helper: Extract Role from JWT token
+    **/
+    private String getRoleFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            return jwtUtil.getRoleFromToken(token);
+        }
+        
+        throw new RuntimeException("Role tidak ditemukan dalam token");
     }
 
     /**       
@@ -149,7 +189,7 @@ public ResponseEntity<ApiResponse<List<Klien>>> getActiveKlien() {
     }
 
     /**       
-     * DTO Mapper
+     * DTO Mapper - UPDATED untuk include approved by
     **/
     private RequestLayananDTO toDTO(RequestLayanan r) {
         RequestLayananDTO dto = new RequestLayananDTO();
@@ -162,6 +202,12 @@ public ResponseEntity<ApiResponse<List<Klien>>> getActiveKlien() {
         dto.setStatus(r.getStatus());
         dto.setTglVerifikasi(r.getTglVerifikasi());
         dto.setKeteranganPenolakan(r.getKeteranganPenolakan());
+        
+        if (r.getApprovedByManager() != null) {
+            dto.setApprovedByManagerId(r.getApprovedByManager().getIdManager());
+            dto.setApprovedByName(r.getApprovedByName());
+        }
+        
         return dto;
     }
 
