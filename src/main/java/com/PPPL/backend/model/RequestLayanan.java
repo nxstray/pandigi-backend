@@ -25,6 +25,13 @@ public class RequestLayanan {
     @ManyToOne
     @JoinColumn(name = "id_klien", nullable = false)
     private Klien klien;
+
+    @ManyToOne
+    @JoinColumn(name = "approved_by_manager_id")
+    private Manager approvedByManager;
+    
+    @Column(name = "approved_by_name", length = 100)
+    private String approvedByName;
     
     @Column(name = "tgl_request")
     @Temporal(TemporalType.TIMESTAMP)
