@@ -7,6 +7,9 @@ import com.PPPL.backend.repository.KlienRepository;
 import com.PPPL.backend.repository.LayananRepository;
 import com.PPPL.backend.repository.ManagerRepository;
 import com.PPPL.backend.repository.RekapRepository;
+import com.PPPL.backend.service.RekapService;
+import com.PPPL.backend.security.AuthUser;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +22,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/rekap")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'MANAGER')")
 public class RekapController {
     
     @Autowired
@@ -33,6 +36,9 @@ public class RekapController {
     
     @Autowired
     private LayananRepository layananRepository;
+
+    @Autowired
+    private RekapService rekapService;
     
     /**
      * Get all rekap
@@ -74,7 +80,7 @@ public class RekapController {
      * Create new rekap
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<RekapDTO>> createRekap(@RequestBody RekapDTO dto) {
         try {
             // Validasi
@@ -128,51 +134,18 @@ public class RekapController {
      * Update rekap
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<RekapDTO>> updateRekap(
-            @PathVariable Integer id, 
-            @RequestBody RekapDTO dto) {
-        try {
-            Rekap rekap = rekapRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rekap dengan ID " + id + " tidak ditemukan"));
-            
-            // Update entities if changed
-            if (dto.getIdKlien() != null) {
-                Klien klien = klienRepository.findById(dto.getIdKlien())
-                    .orElseThrow(() -> new RuntimeException("Klien tidak ditemukan"));
-                rekap.setKlien(klien);
-            }
-            
-            if (dto.getIdManager() != null) {
-                Manager manager = managerRepository.findById(dto.getIdManager())
-                    .orElseThrow(() -> new RuntimeException("Manager tidak ditemukan"));
-                rekap.setManager(manager);
-            }
-            
-            if (dto.getIdLayanan() != null) {
-                Layanan layanan = layananRepository.findById(dto.getIdLayanan())
-                    .orElseThrow(() -> new RuntimeException("Layanan tidak ditemukan"));
-                rekap.setLayanan(layanan);
-            }
-            
-            // Update fields
-            if (dto.getTglMeeting() != null) {
-                rekap.setTglMeeting(dto.getTglMeeting());
-            }
-            rekap.setHasil(dto.getHasil());
-            if (dto.getStatus() != null) {
-                rekap.setStatus(dto.getStatus());
-            }
-            rekap.setCatatan(dto.getCatatan());
-            
-            Rekap updated = rekapRepository.save(rekap);
-            
-            return ResponseEntity.ok(
-                ApiResponse.success("Rekap meeting berhasil diupdate", convertToDTO(updated)));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal update rekap: " + e.getMessage()));
-        }
+            @PathVariable Integer id,
+            @RequestBody RekapDTO dto
+    ) {
+        AuthUser auth = AuthUser.fromContext();
+
+        Rekap updated = rekapService.updateRekap(id, dto, auth);
+
+        return ResponseEntity.ok(
+            ApiResponse.success("Rekap meeting berhasil diupdate", convertToDTO(updated))
+        );
     }
     
     /**
