@@ -2,8 +2,10 @@ package com.PPPL.backend.controller;
 
 import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.ManagerDTO;
+import com.PPPL.backend.model.Layanan;
 import com.PPPL.backend.model.Manager;
 import com.PPPL.backend.repository.ManagerRepository;
+import com.PPPL.backend.repository.LayananRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,9 @@ public class ManagerController {
     
     @Autowired
     private ManagerRepository managerRepository;
+
+    @Autowired
+    private LayananRepository layananRepository;
     
     /**
      * Get all managers
@@ -217,6 +222,26 @@ public class ManagerController {
                 .stream()
                 .map(Manager::getDivisi)
                 .filter(d -> d != null && !d.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(ApiResponse.success(divisiList));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal load divisi: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get divisi list from nama layanan
+     */
+    @GetMapping("/divisi-layanan")
+    public ResponseEntity<ApiResponse<List<String>>> getDivisiFromLayanan() {
+        try {
+            List<String> divisiList = layananRepository.findAll()
+                .stream()
+                .map(Layanan::getNamaLayanan)
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
