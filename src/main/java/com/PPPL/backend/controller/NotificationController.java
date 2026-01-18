@@ -16,7 +16,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/notifications")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class NotificationController {
     
     @Autowired
@@ -29,7 +28,7 @@ public class NotificationController {
     private NotificationEventPublisher notificationPublisher;
     
     /**
-     * TEST REALTIME NOTIFICATION VIA RABBITMQ + WEBSOCKET
+     * Test real-time notification via RabbitMQ + WebSocket
      */
     @PostMapping("/test-realtime")
     public ResponseEntity<ApiResponse<String>> testRealtimeNotification() {

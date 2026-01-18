@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/manager")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class ManagerController {
     
     @Autowired
@@ -61,7 +60,7 @@ public class ManagerController {
      * Create new manager
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<ManagerDTO>> createManager(@RequestBody ManagerDTO dto) {
         try {
             // Validasi
@@ -104,7 +103,7 @@ public class ManagerController {
      * Update manager
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<ManagerDTO>> updateManager(
             @PathVariable Integer id, 
             @RequestBody ManagerDTO dto) {

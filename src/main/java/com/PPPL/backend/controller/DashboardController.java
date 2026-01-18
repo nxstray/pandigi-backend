@@ -6,7 +6,6 @@ import com.PPPL.backend.model.StatusRequest;
 import com.PPPL.backend.repository.RequestLayananRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
@@ -15,7 +14,6 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class DashboardController {
 
     @Autowired

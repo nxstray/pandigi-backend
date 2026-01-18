@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/layanan")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class LayananController {
     
     @Autowired
@@ -62,7 +61,7 @@ public class LayananController {
      * Create new layanan
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<LayananDTO>> createLayanan(@RequestBody LayananDTO dto) {
         try {
             // Validasi
@@ -106,7 +105,7 @@ public class LayananController {
      * Update layanan
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<LayananDTO>> updateLayanan(
             @PathVariable Integer id, 
             @RequestBody LayananDTO dto) {
