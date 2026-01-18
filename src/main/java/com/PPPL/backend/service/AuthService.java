@@ -8,6 +8,7 @@ import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,9 @@ public class AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
     
     /**
      * Login admin - UPDATED to include isFirstLogin
@@ -237,7 +241,7 @@ public class AuthService {
      * Send password reset email
      */
     private void sendPasswordResetEmail(Admin admin, String resetToken) {
-        String resetLink = "http://localhost:4200/reset-password?token=" + resetToken;
+        String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
         
         String subject = "Reset Password - PT. Pandawa Digital Mandiri";
         
