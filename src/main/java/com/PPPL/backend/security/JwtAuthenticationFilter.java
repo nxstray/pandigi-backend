@@ -20,67 +20,62 @@ import java.util.Collections;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
     private JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-
-        // 1. Skip JWT FILTER untuk WebSocket / SockJS
-        if (path.startsWith("/api/ws")) {
+        if (request.getRequestURI().startsWith("/api/ws")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        logger.debug("[JWT FILTER] Request URI: {}", path);
-
         try {
-            String jwt = getJwtFromRequest(request);
+            String jwt = resolveToken(request);
 
-            // Tidak spam warning lagi
             if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
 
+                Integer userId = jwtUtil.getAdminIdFromToken(jwt);
                 String username = jwtUtil.getUsernameFromToken(jwt);
                 String role = jwtUtil.getRoleFromToken(jwt);
 
+                JwtUserPrincipal principal =
+                        new JwtUserPrincipal(username, userId, role);
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                username,
+                                principal,
                                 null,
                                 Collections.singletonList(
                                         new SimpleGrantedAuthority("ROLE_" + role)
                                 )
                         );
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
 
-                logger.debug("[JWT FILTER] Authenticated user: {} with role {}", username, role);
+                log.debug("[JWT] Authenticated user={} role={}", username, role);
             }
-
-        } catch (Exception ex) {
-            logger.error("[JWT FILTER] Authentication error", ex);
+        } catch (Exception e) {
+            log.error("[JWT] Authentication error", e);
         }
 
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extract JWT from Authorization header
-     */
-    private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+    private String resolveToken(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
         }
-
         return null;
     }
 }
