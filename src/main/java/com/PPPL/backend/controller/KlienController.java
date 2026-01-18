@@ -25,14 +25,14 @@ public class KlienController {
     private KlienRepository klienRepository;
     
     /**
-     * Get all klien
+     * Get all klien - filter out deleted ones
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<KlienDTO>>> getAllKlien() {
-
         List<KlienDTO> klien = klienRepository
             .findKlienYangTerverifikasi()
             .stream()
+            .filter(k -> !Boolean.TRUE.equals(k.getIsDeleted())) // Filter deleted
             .map(this::convertToDTO)
             .collect(Collectors.toList());
 
@@ -47,6 +47,12 @@ public class KlienController {
         try {
             Klien klien = klienRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            // Check if deleted
+            if (Boolean.TRUE.equals(klien.getIsDeleted())) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Klien tidak ditemukan"));
+            }
             
             return ResponseEntity.ok(ApiResponse.success(convertToDTO(klien)));
         } catch (Exception e) {
@@ -86,6 +92,7 @@ public class KlienController {
             klien.setNoTelp(dto.getNoTelp());
             klien.setStatus(dto.getStatus() != null ? dto.getStatus() : StatusKlien.BELUM);
             klien.setTglRequest(dto.getTglRequest() != null ? dto.getTglRequest() : new Date());
+            klien.setIsDeleted(false); // Explicitly set
             
             Klien saved = klienRepository.save(klien);
             
@@ -109,6 +116,12 @@ public class KlienController {
         try {
             Klien klien = klienRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            // Check if deleted
+            if (Boolean.TRUE.equals(klien.getIsDeleted())) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Klien tidak dapat diupdate karena sudah dihapus"));
+            }
             
             // Check duplicate email (exclude current)
             klienRepository.findByEmailKlien(dto.getEmailKlien()).ifPresent(existing -> {
@@ -159,7 +172,6 @@ public class KlienController {
             return ResponseEntity.ok(ApiResponse.success("Klien berhasil dihapus", null));
             
         } catch (Exception e) {
-            // Log full error
             e.printStackTrace();
             String errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -168,14 +180,16 @@ public class KlienController {
     }
     
     /**
-     * Search klien
+     * Search klien - filter deleted
      */
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<KlienDTO>>> searchKlien(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) StatusKlien status) {
         try {
-            List<Klien> klien = klienRepository.findAll();
+            List<Klien> klien = klienRepository.findAll().stream()
+                .filter(k -> !Boolean.TRUE.equals(k.getIsDeleted())) // Filter deleted
+                .collect(Collectors.toList());
             
             // Filter by keyword
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -215,6 +229,12 @@ public class KlienController {
         try {
             Klien klien = klienRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
+            
+            // Check if deleted
+            if (Boolean.TRUE.equals(klien.getIsDeleted())) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Klien tidak dapat diupdate karena sudah dihapus"));
+            }
             
             klien.setStatus(status);
             Klien updated = klienRepository.save(klien);

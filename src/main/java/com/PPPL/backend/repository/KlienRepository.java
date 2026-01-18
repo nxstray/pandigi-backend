@@ -18,6 +18,7 @@ public interface KlienRepository extends JpaRepository<Klien, Integer> {
     SELECT DISTINCT k FROM Klien k
     JOIN k.requestLayananSet r
     WHERE r.status = 'VERIFIKASI'
+    AND (k.isDeleted = false OR k.isDeleted IS NULL)
     """)
     List<Klien> findKlienYangTerverifikasi();
     
