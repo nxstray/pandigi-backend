@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/klien")
 @CrossOrigin(origins = "http://localhost:4200")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
 public class KlienController {
     
     @Autowired
@@ -60,7 +59,7 @@ public class KlienController {
      * Create new klien
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<KlienDTO>> createKlien(@RequestBody KlienDTO dto) {
         try {
             // Validasi
@@ -103,7 +102,7 @@ public class KlienController {
      * Update klien
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<KlienDTO>> updateKlien(
             @PathVariable Integer id, 
             @RequestBody KlienDTO dto) {
@@ -143,23 +142,28 @@ public class KlienController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteKlien(@PathVariable Integer id) {
         try {
+            // Find klien
             Klien klien = klienRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Klien dengan ID " + id + " tidak ditemukan"));
             
-            // Check if klien has requests
-            if (!klien.getRequestLayananSet().isEmpty()) {
+            // Check if already deleted
+            if (Boolean.TRUE.equals(klien.getIsDeleted())) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(
-                        "Klien tidak dapat dihapus karena masih memiliki " + 
-                        klien.getRequestLayananSet().size() + " request layanan"));
+                    .body(ApiResponse.error("Klien sudah dihapus sebelumnya"));
             }
             
-            klienRepository.delete(klien);
+            // Soft delete
+            klien.setIsDeleted(true);
+            klienRepository.save(klien);
             
             return ResponseEntity.ok(ApiResponse.success("Klien berhasil dihapus", null));
+            
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal hapus klien: " + e.getMessage()));
+            // Log full error
+            e.printStackTrace();
+            String errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Gagal hapus klien: " + errorMessage));
         }
     }
     
@@ -204,7 +208,7 @@ public class KlienController {
      * Update klien status
      */
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<KlienDTO>> updateKlienStatus(
             @PathVariable Integer id,
             @RequestParam StatusKlien status) {
