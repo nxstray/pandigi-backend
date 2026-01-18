@@ -6,6 +6,7 @@ import com.PPPL.backend.model.Admin;
 import com.PPPL.backend.model.AdminRole;
 import com.PPPL.backend.repository.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class AdminService {
     
     @Autowired
     private EmailService emailService;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
     
     private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
@@ -265,7 +269,7 @@ public class AdminService {
                         </div>
                         
                         <center>
-                            <a href="http://localhost:4200/login" class="btn">Login Sekarang</a>
+                            <a href="%s/login" class="btn">Login Sekarang</a>
                         </center>
                         
                         <div class="footer">
@@ -283,7 +287,8 @@ public class AdminService {
             manager.getNamaLengkap(),
             manager.getUsername(),
             temporaryPassword,
-            manager.getEmail()
+            manager.getEmail(),
+            frontendUrl
         );
         
         try {
