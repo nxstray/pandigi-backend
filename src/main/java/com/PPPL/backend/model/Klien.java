@@ -37,6 +37,9 @@ public class Klien {
     @Temporal(TemporalType.DATE)
     private Date tglRequest;
     
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+    
     @ManyToMany(mappedBy = "klienSet")
     private Set<Manager> managerSet = new HashSet<>();
     
