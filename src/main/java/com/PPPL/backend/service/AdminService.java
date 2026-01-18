@@ -265,7 +265,11 @@ public class AdminService {
                         </div>
                         
                         <div class="warning">
-                            <strong>WARNING:</strong> Untuk keamanan akun Anda, harap segera mengubah password setelah login pertama kali.
+                            <strong>PENTING:</strong> 
+                            <ul style="margin: 10px 0; padding-left: 20px; text-align: left;">
+                                <li>Untuk keamanan, harap segera mengubah password setelah login pertama kali.</li>
+                                <li>Gunakan mode Incognito / Private atau browser berbeda untuk login pertama kali.</li>
+                            </ul>
                         </div>
                         
                         <center>
