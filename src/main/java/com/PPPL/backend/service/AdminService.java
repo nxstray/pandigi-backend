@@ -269,7 +269,7 @@ public class AdminService {
                         </div>
                         
                         <center>
-                            <a href="%s/login" class="btn">Login Sekarang</a>
+                            <a href="%s/login?action=newuser" class="btn">Login Sekarang</a>
                         </center>
                         
                         <div class="footer">
