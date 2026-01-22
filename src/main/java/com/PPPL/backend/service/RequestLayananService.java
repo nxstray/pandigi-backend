@@ -67,49 +67,44 @@ public class RequestLayananService {
             throw new RuntimeException("Request sudah diverifikasi sebelumnya");
         }
 
-        // AMBIL ADMIN
         Admin admin = adminRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
 
         String approverName = admin.getNamaLengkap();
 
-        // Update status request
         request.setStatus(StatusRequest.VERIFIKASI);
         request.setTglVerifikasi(new Date());
         request.setKeteranganPenolakan(null);
-        
-        // SET INFO APPROVER
         request.setApprovedByName(approverName);
 
-        // Update status klien menjadi BELUM AKTIF
         Klien klien = request.getKlien();
         klien.setStatus(StatusKlien.BELUM);
-        
-        // Save klien
         klienRepository.save(klien);
         
-        // Save request
         RequestLayanan saved = requestLayananRepository.save(request);
 
-        // PUBLISH NOTIFICATION TO RABBITMQ (Realtime)
         String namaKlien = saved.getKlien().getNamaKlien();
         String namaLayanan = saved.getLayanan().getNamaLayanan();
+        String emailKlien = saved.getKlien().getEmailKlien();
         
-        notificationPublisher.publishFullNotification(
+        notificationPublisher.publishFullNotificationWithDetails(
                 "REQUEST_VERIFIED",
                 "Request Berhasil Diverifikasi",
                 String.format("%s meminta layanan %s. Diverifikasi oleh %s.", 
                         namaKlien, namaLayanan, approverName),
                 "/admin/request-layanan/" + saved.getIdRequest(),
-                saved.getKlien().getEmailKlien()
+                emailKlien,
+                namaKlien,
+                namaLayanan,
+                approverName
         );
 
-        log.info("Request {} APPROVED by {} (role: {}) - Klien status: BELUM", id, approverName, role);
+        log.info("Request {} APPROVED by {} - Professional email sent via RabbitMQ", id, approverName);
         return saved;
     }
 
     /**
-     * REJECT REQUEST - dengan notifikasi realtime
+     * REJECT REQUEST - dikirim via RabbitMQ
      */
     @Transactional
     public RequestLayanan reject(Integer id, String keterangan) {
@@ -125,20 +120,24 @@ public class RequestLayananService {
 
         RequestLayanan saved = requestLayananRepository.save(request);
 
-        // PUBLISH NOTIFICATION
         String namaKlien = saved.getKlien().getNamaKlien();
         String namaLayanan = saved.getLayanan().getNamaLayanan();
+        String emailKlien = saved.getKlien().getEmailKlien();
         
-        notificationPublisher.publishFullNotification(
+        // kirim via RabbitMQ
+        notificationPublisher.publishFullNotificationWithDetails(
                 "REQUEST_REJECTED",
                 "Request Ditolak",
                 String.format("Request dari %s untuk layanan %s telah ditolak. Alasan: %s", 
                         namaKlien, namaLayanan, keterangan),
                 "/admin/request-layanan/" + saved.getIdRequest(),
-                saved.getKlien().getEmailKlien()
+                emailKlien,
+                namaKlien,
+                namaLayanan,
+                keterangan
         );
 
-        log.info("Request {} REJECTED and notification sent", id);
+        log.info("Request {} REJECTED - Professional email sent via RabbitMQ", id);
         return saved;
     }
 
