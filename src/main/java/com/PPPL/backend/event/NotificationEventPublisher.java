@@ -45,17 +45,20 @@ public class NotificationEventPublisher {
     }
 
     /**
-     * Publish email notifikasi
+     * Publish email untuk Request Verified dengan data lengkap
      */
-    public void publishEmailNotification(
+    public void publishRequestVerifiedEmail(
             String email,
-            String title,
-            String message
+            String namaKlien,
+            String namaLayanan,
+            String approverName
     ) {
         NotificationEventDTO event = new NotificationEventDTO();
+        event.setType("REQUEST_VERIFIED");
         event.setEmail(email);
-        event.setTitle(title);
-        event.setMessage(message);
+        event.setNamaKlien(namaKlien);
+        event.setNamaLayanan(namaLayanan);
+        event.setKeterangan(approverName);
         event.setSendEmail(true);
 
         try {
@@ -64,49 +67,64 @@ public class NotificationEventPublisher {
                     RabbitMQConfig.ROUTING_KEY_EMAIL,
                     event
             );
-            log.info("Published to RabbitMQ (EMAIL): {}", email);
+            log.info("Published REQUEST_VERIFIED email to: {}", email);
         } catch (Exception e) {
-            log.error("Failed to publish email notification: {}", e.getMessage());
+            log.error("Failed to publish verified email: {}", e.getMessage());
         }
     }
 
     /**
-     * Publish both admin broadcast + email
+     * Publish email untuk Request Rejected dengan data lengkap
      */
-    public void publishFullNotification(
+    public void publishRequestRejectedEmail(
+            String email,
+            String namaKlien,
+            String namaLayanan,
+            String keterangan
+    ) {
+        NotificationEventDTO event = new NotificationEventDTO();
+        event.setType("REQUEST_REJECTED");
+        event.setEmail(email);
+        event.setNamaKlien(namaKlien);
+        event.setNamaLayanan(namaLayanan);
+        event.setKeterangan(keterangan);
+        event.setSendEmail(true);
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NOTIFICATION,
+                    RabbitMQConfig.ROUTING_KEY_EMAIL,
+                    event
+            );
+            log.info("Published REQUEST_REJECTED email to: {}", email);
+        } catch (Exception e) {
+            log.error("Failed to publish rejected email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Publish dengan data lengkap untuk template profesional
+     */
+    public void publishFullNotificationWithDetails(
             String type,
             String title,
             String message,
             String link,
-            String email
+            String email,
+            String namaKlien,
+            String namaLayanan,
+            String keterangan
     ) {
-        // Admin notification
+        // 1. Admin notification (WebSocket)
         publishAdminNotification(type, title, message, link);
 
-        // Email notification
+        // 2. Email notification dengan template profesional
         if (email != null && !email.isEmpty()) {
-            publishEmailNotification(email, title, buildEmailHtml(title, message, link));
+            if ("REQUEST_VERIFIED".equals(type)) {
+                publishRequestVerifiedEmail(email, namaKlien, namaLayanan, keterangan);
+            } else if ("REQUEST_REJECTED".equals(type)) {
+                publishRequestRejectedEmail(email, namaKlien, namaLayanan, keterangan);
+            }
         }
-    }
-
-    /**
-     * Build HTML email template
-     */
-    private String buildEmailHtml(String title, String message, String link) {
-        return String.format("""
-            <html>
-            <body style="font-family: Arial, sans-serif;">
-                <h2>%s</h2>
-                <p>%s</p>
-                %s
-                <br/>
-                <small>PPPL Notification System</small>
-            </body>
-            </html>
-            """,
-            title,
-            message,
-            link != null ? "<a href=\"" + link + "\">Buka Detail</a>" : ""
-        );
     }
 }
