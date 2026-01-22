@@ -4,7 +4,9 @@ import com.PPPL.backend.data.AdminDTO;
 import com.PPPL.backend.data.RegisterManagerRequest;
 import com.PPPL.backend.model.Admin;
 import com.PPPL.backend.model.AdminRole;
+import com.PPPL.backend.model.Manager;
 import com.PPPL.backend.repository.AdminRepository;
+import com.PPPL.backend.repository.ManagerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,12 +14,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.Date;
 
 @Service
 public class AdminService {
     
     @Autowired
     private AdminRepository adminRepository;
+    
+    @Autowired
+    private ManagerRepository managerRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -34,7 +40,7 @@ public class AdminService {
     private static final SecureRandom random = new SecureRandom();
     
     /**
-     * Register manager baru dengan auto-generated password dan email notification
+     * Register manager baru dengan auto-generated password, email notification dan otomatis tambahkan ke tabel Manager
      */
     @Transactional
     public AdminDTO registerManager(RegisterManagerRequest request) {
@@ -43,7 +49,21 @@ public class AdminService {
             throw new RuntimeException("Email sudah digunakan");
         }
         
-        // Generate username dari email (bagian sebelum @)
+        // Validate email di tabel Manager juga
+        if (managerRepository.existsByEmailManager(request.getEmail())) {
+            throw new RuntimeException("Email sudah terdaftar sebagai manager");
+        }
+        
+        // Validate required fields
+        if (request.getNoTelp() == null || request.getNoTelp().trim().isEmpty()) {
+            throw new RuntimeException("No. Telepon wajib diisi");
+        }
+        
+        if (request.getDivisi() == null || request.getDivisi().trim().isEmpty()) {
+            throw new RuntimeException("Divisi wajib diisi");
+        }
+        
+        // Generate username dari email
         String username = generateUsernameFromEmail(request.getEmail());
         
         // Pastikan username unik
@@ -57,22 +77,32 @@ public class AdminService {
         // Generate random password
         String temporaryPassword = generateRandomPassword();
         
-        // Create new manager
-        Admin manager = new Admin();
-        manager.setUsername(finalUsername);
-        manager.setPassword(passwordEncoder.encode(temporaryPassword));
-        manager.setNamaLengkap(request.getNamaLengkap());
-        manager.setEmail(request.getEmail());
-        manager.setRole(AdminRole.MANAGER);
-        manager.setIsActive(true);
-        manager.setIsFirstLogin(true);
+        // 1. Create new Admin (untuk login)
+        Admin admin = new Admin();
+        admin.setUsername(finalUsername);
+        admin.setPassword(passwordEncoder.encode(temporaryPassword));
+        admin.setNamaLengkap(request.getNamaLengkap());
+        admin.setEmail(request.getEmail());
+        admin.setRole(AdminRole.MANAGER);
+        admin.setIsActive(true);
+        admin.setIsFirstLogin(true);
         
-        Admin saved = adminRepository.save(manager);
+        Admin savedAdmin = adminRepository.save(admin);
         
-        // Send email with credentials
-        sendWelcomeEmail(saved, temporaryPassword);
+        // 2. Create new Manager (untuk data manager)
+        Manager manager = new Manager();
+        manager.setNamaManager(request.getNamaLengkap());
+        manager.setEmailManager(request.getEmail());
+        manager.setNoTelp(request.getNoTelp());
+        manager.setDivisi(request.getDivisi());
+        manager.setTglMulai(new Date()); // Set tanggal mulai = hari ini
         
-        return mapToDTO(saved);
+        managerRepository.save(manager);
+        
+        // 3. Send email with credentials
+        sendWelcomeEmail(savedAdmin, temporaryPassword);
+        
+        return mapToDTO(savedAdmin);
     }
     
     /**
@@ -195,11 +225,6 @@ public class AdminService {
                         margin: 20px 0;
                         border-radius: 4px;
                     }
-                    .warning-icon {
-                        color: #ffc107;
-                        font-size: 20px;
-                        margin-right: 10px;
-                    }
                     .btn {
                         display: inline-block;
                         background: #0C2B40;
@@ -217,24 +242,6 @@ public class AdminService {
                         border-top: 1px solid #e2e8f0;
                         color: #718096;
                         font-size: 14px;
-                    }
-                    .steps {
-                        background: #f7fafc;
-                        padding: 20px;
-                        border-radius: 4px;
-                        margin: 20px 0;
-                    }
-                    .step {
-                        margin: 10px 0;
-                        padding-left: 30px;
-                        position: relative;
-                    }
-                    .step:before {
-                        content: "✓";
-                        position: absolute;
-                        left: 0;
-                        color: #0C2B40;
-                        font-weight: bold;
                     }
                 </style>
             </head>
@@ -266,9 +273,10 @@ public class AdminService {
                         
                         <div class="warning">
                             <strong>PENTING:</strong> 
-                            <ul style="margin: 10px 0; padding-left: 20px; text-align: left;">
-                                <li>Untuk keamanan, harap segera mengubah password setelah login pertama kali.</li>
-                                <li>Gunakan mode Incognito / Private atau browser berbeda untuk login pertama kali.</li>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Segera ubah password setelah login pertama kali.</li>
+                                <li>Gunakan mode Incognito / Private untuk login pertama kali.</li>
+                                <li>Jangan bagikan kredensial ini kepada siapapun.</li>
                             </ul>
                         </div>
                         
