@@ -2,10 +2,16 @@ package com.PPPL.backend.controller;
 
 import com.PPPL.backend.data.ApiResponse;
 import com.PPPL.backend.data.ManagerDTO;
+import com.PPPL.backend.model.Admin;
 import com.PPPL.backend.model.Layanan;
 import com.PPPL.backend.model.Manager;
 import com.PPPL.backend.repository.ManagerRepository;
+
+import jakarta.transaction.Transactional;
+
+import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.repository.LayananRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,6 +32,9 @@ public class ManagerController {
 
     @Autowired
     private LayananRepository layananRepository;
+
+    @Autowired
+    private AdminRepository adminRepository;
     
     /**
      * Get all managers
@@ -141,8 +151,9 @@ public class ManagerController {
     }
     
     /**
-     * Delete manager
+     * Delete manager - HARD DELETE dari kedua tabel (Manager & Admin)
      */
+    @Transactional
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteManager(@PathVariable Integer id) {
@@ -150,12 +161,14 @@ public class ManagerController {
             Manager manager = managerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Manager dengan ID " + id + " tidak ditemukan"));
             
+            String emailManager = manager.getEmailManager();
+            
             // Check if manager has employees
             if (!manager.getKaryawanSet().isEmpty()) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponse.error(
                         "Manager tidak dapat dihapus karena masih memiliki " + 
-                        manager.getKaryawanSet().size() + " karyawan"));
+                        manager.getKaryawanSet().size() + " karyawan. Hapus atau pindahkan karyawan terlebih dahulu."));
             }
             
             // Check if manager has clients
@@ -163,13 +176,25 @@ public class ManagerController {
                 return ResponseEntity.badRequest()
                     .body(ApiResponse.error(
                         "Manager tidak dapat dihapus karena masih menangani " + 
-                        manager.getKlienSet().size() + " klien"));
+                        manager.getKlienSet().size() + " klien. Hapus atau pindahkan klien terlebih dahulu."));
             }
             
+            // 1. Hapus dari tabel Manager
             managerRepository.delete(manager);
             
-            return ResponseEntity.ok(ApiResponse.success("Manager berhasil dihapus", null));
+            // 2. Hapus dari tabel Admin berdasarkan email
+            Optional<Admin> adminOpt = adminRepository.findByEmail(emailManager);
+            if (adminOpt.isPresent()) {
+                Admin admin = adminOpt.get();
+                adminRepository.delete(admin);
+                System.out.println("Admin dengan email " + emailManager + " berhasil dihapus");
+            } else {
+                System.out.println("Admin dengan email " + emailManager + " tidak ditemukan");
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success("Manager dan akun login berhasil dihapus", null));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Gagal hapus manager: " + e.getMessage()));
         }
@@ -254,7 +279,6 @@ public class ManagerController {
     }
     
     // ========== HELPER METHODS ==========
-    
     private ManagerDTO convertToDTO(Manager manager) {
         ManagerDTO dto = new ManagerDTO();
         dto.setIdManager(manager.getIdManager());
