@@ -16,65 +16,6 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Autowired
-    private EmailService emailService;
-
-    /**
-     * Create notification and send email
-     */
-    public Notification createNotificationAndSendEmail(
-            String type,
-            String title,
-            String message,
-            String link,
-            String emailTujuan
-    ) {
-        Notification notification = new Notification();
-        notification.setType(type);
-        notification.setTitle(title);
-        notification.setMessage(message);
-        notification.setLink(link);
-        notification.setIsRead(false);
-        notification.setCreatedAt(new Date());
-
-        Notification saved = notificationRepository.save(notification);
-
-        // kirim email
-        sendNotificationEmail(emailTujuan, title, message, link);
-
-        return saved;
-    }
-
-    /**
-     * Send notification email
-     */
-    private void sendNotificationEmail(
-            String to,
-            String title,
-            String message,
-            String link
-    ) {
-        String html = """
-            <html>
-            <body style="font-family: Arial, sans-serif;">
-                <h2>%s</h2>
-                <p>%s</p>
-                %s
-                <br/>
-                <small>PPPL Notification System</small>
-            </body>
-            </html>
-        """.formatted(
-                title,
-                message,
-                link != null
-                        ? "<a href=\"" + link + "\">Buka Detail</a>"
-                        : ""
-        );
-
-        emailService.sendEmail(to, title, html);
-    }
-
     /**
      * Query notifications
      */
