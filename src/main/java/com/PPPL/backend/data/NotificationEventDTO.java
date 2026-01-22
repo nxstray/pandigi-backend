@@ -14,4 +14,8 @@ public class NotificationEventDTO implements Serializable {
     private String email;
     private boolean sendEmail;
     private boolean broadcastAdmin;
+    
+    private String namaKlien;
+    private String namaLayanan;
+    private String keterangan;
 }
