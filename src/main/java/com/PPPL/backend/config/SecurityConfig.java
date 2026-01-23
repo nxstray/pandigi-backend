@@ -38,32 +38,50 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> {})
-            .sessionManagement(session -> 
+            .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/", "/health", "/actuator/health").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
 
-                // Websocket endpoint
-                .requestMatchers("/api/ws/**", "/ws/**").permitAll()
-                
-                // Admin endpoints
-                .requestMatchers("/api/admin/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
-                .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "SUPER_ADMIN")
-                .requestMatchers("/api/karyawan/**").hasAnyRole("SUPER_ADMIN")
-                .requestMatchers("/api/klien/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
-                .requestMatchers("/api/layanan/**").hasAnyRole("SUPER_ADMIN")
-                .requestMatchers("/api/request-layanan/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
-                .requestMatchers("/api/rekap/**").hasAnyRole("SUPER_ADMIN", "MANAGER")
-                
+                // permit all public endpoints
+                .requestMatchers(
+                    "/",
+                    "/health",
+                    "/actuator/health",
+                    "/api/auth/**",
+                    "/api/public/**",
+                    "/ws/**",
+                    "/api/ws/**"
+                ).permitAll()
+
+                // Admin and role-based access control
+                .requestMatchers("/api/admin/**")
+                    .hasAnyRole("SUPER_ADMIN", "MANAGER")
+
+                .requestMatchers("/api/manager/**")
+                    .hasAnyRole("MANAGER", "SUPER_ADMIN")
+
+                .requestMatchers("/api/karyawan/**")
+                    .hasRole("SUPER_ADMIN")
+
+                .requestMatchers("/api/klien/**")
+                    .hasAnyRole("SUPER_ADMIN", "MANAGER")
+
+                .requestMatchers("/api/layanan/**")
+                    .hasRole("SUPER_ADMIN")
+
+                .requestMatchers("/api/request-layanan/**")
+                    .hasAnyRole("SUPER_ADMIN", "MANAGER")
+
+                .requestMatchers("/api/rekap/**")
+                    .hasAnyRole("SUPER_ADMIN", "MANAGER")
+
+                // Fallback: all other requests need authentication
                 .anyRequest().authenticated()
             );
-        
+
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 }
