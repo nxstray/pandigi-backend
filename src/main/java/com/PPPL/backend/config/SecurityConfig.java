@@ -50,6 +50,7 @@ public class SecurityConfig {
                     "/actuator/health",
                     "/api/auth/**",
                     "/api/public/**",
+                    "/uploads/**",
                     "/ws/**",
                     "/api/ws/**"
                 ).permitAll()
