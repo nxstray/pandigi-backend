@@ -5,5 +5,5 @@ public enum PageName {
     WHAT_WE_DO,
     WHO_WE_ARE,
     OUR_WORK,
-    CLIENT_FORM
+    BUILD_WITH_US
 }
