@@ -1,13 +1,13 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.ClientFormDTO;
+import com.PPPL.backend.data.client.ClientFormDTO;
+import com.PPPL.backend.data.common.ApiResponse;
 import com.PPPL.backend.event.NotificationEventPublisher;
-import com.PPPL.backend.model.Klien;
-import com.PPPL.backend.model.Layanan;
-import com.PPPL.backend.model.RequestLayanan;
-import com.PPPL.backend.model.StatusKlien;
-import com.PPPL.backend.model.StatusRequest;
+import com.PPPL.backend.model.admin.Klien;
+import com.PPPL.backend.model.enums.StatusKlien;
+import com.PPPL.backend.model.enums.StatusRequest;
+import com.PPPL.backend.model.layanan.Layanan;
+import com.PPPL.backend.model.layanan.RequestLayanan;
 import com.PPPL.backend.repository.KlienRepository;
 import com.PPPL.backend.repository.LayananRepository;
 import com.PPPL.backend.repository.RequestLayananRepository;

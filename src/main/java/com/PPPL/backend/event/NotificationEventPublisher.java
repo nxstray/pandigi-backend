@@ -1,7 +1,8 @@
 package com.PPPL.backend.event;
 
 import com.PPPL.backend.config.RabbitMQConfig;
-import com.PPPL.backend.data.NotificationEventDTO;
+import com.PPPL.backend.data.notification.NotificationEventDTO;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;

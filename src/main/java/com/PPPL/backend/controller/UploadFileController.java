@@ -1,7 +1,7 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.model.UploadFile;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.model.file.UploadFile;
 import com.PPPL.backend.service.UploadFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,8 +1,8 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.model.RequestLayanan;
-import com.PPPL.backend.model.StatusRequest;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.model.enums.StatusRequest;
+import com.PPPL.backend.model.layanan.RequestLayanan;
 import com.PPPL.backend.repository.RequestLayananRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

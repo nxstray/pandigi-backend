@@ -1,9 +1,9 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.KaryawanDTO;
-import com.PPPL.backend.model.Karyawan;
-import com.PPPL.backend.model.Manager;
+import com.PPPL.backend.data.admin.KaryawanDTO;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.model.admin.Karyawan;
+import com.PPPL.backend.model.admin.Manager;
 import com.PPPL.backend.repository.KaryawanRepository;
 import com.PPPL.backend.repository.ManagerRepository;
 import org.springframework.beans.factory.annotation.Autowired;

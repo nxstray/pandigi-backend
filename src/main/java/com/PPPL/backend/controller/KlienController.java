@@ -1,10 +1,10 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.KlienDTO;
-import com.PPPL.backend.model.Klien;
-import com.PPPL.backend.model.Manager;
-import com.PPPL.backend.model.StatusKlien;
+import com.PPPL.backend.data.client.KlienDTO;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.model.admin.Klien;
+import com.PPPL.backend.model.admin.Manager;
+import com.PPPL.backend.model.enums.StatusKlien;
 import com.PPPL.backend.repository.KlienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

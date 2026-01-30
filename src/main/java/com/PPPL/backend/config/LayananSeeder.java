@@ -1,7 +1,7 @@
 package com.PPPL.backend.config;
 
-import com.PPPL.backend.model.KategoriLayanan;
-import com.PPPL.backend.model.Layanan;
+import com.PPPL.backend.model.enums.KategoriLayanan;
+import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.repository.LayananRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

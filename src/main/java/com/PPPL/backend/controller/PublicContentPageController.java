@@ -1,7 +1,8 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.*;
-import com.PPPL.backend.model.PageName;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.data.content.PageContentResponse;
+import com.PPPL.backend.model.enums.PageName;
 import com.PPPL.backend.service.ContentPageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

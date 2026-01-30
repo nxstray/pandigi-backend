@@ -3,8 +3,8 @@ package com.PPPL.backend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.PPPL.backend.model.Rekap;
-import com.PPPL.backend.model.StatusRekap;
+import com.PPPL.backend.model.enums.StatusRekap;
+import com.PPPL.backend.model.rekap.Rekap;
 
 import java.util.List;
 

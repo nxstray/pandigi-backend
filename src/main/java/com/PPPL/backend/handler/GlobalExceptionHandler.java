@@ -1,10 +1,11 @@
 package com.PPPL.backend.handler;
 
-import com.PPPL.backend.data.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.PPPL.backend.data.common.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

@@ -1,7 +1,8 @@
 package com.PPPL.backend.repository;
 
-import com.PPPL.backend.model.ContentPage;
-import com.PPPL.backend.model.PageName;
+import com.PPPL.backend.model.content.ContentPage;
+import com.PPPL.backend.model.enums.PageName;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;

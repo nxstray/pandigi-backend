@@ -3,7 +3,7 @@ package com.PPPL.backend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.PPPL.backend.model.Karyawan;
+import com.PPPL.backend.model.admin.Karyawan;
 
 import java.util.List;
 import java.util.Optional;

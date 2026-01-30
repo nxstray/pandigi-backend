@@ -1,7 +1,12 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.data.*;
-import com.PPPL.backend.model.*;
+import com.PPPL.backend.data.content.BulkUpdateContentRequest;
+import com.PPPL.backend.data.content.ContentPageDTO;
+import com.PPPL.backend.data.content.PageContentResponse;
+import com.PPPL.backend.data.content.UpdateContentRequest;
+import com.PPPL.backend.model.admin.Admin;
+import com.PPPL.backend.model.content.ContentPage;
+import com.PPPL.backend.model.enums.PageName;
 import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.repository.ContentPageRepository;
 import com.PPPL.backend.security.AuthUser;

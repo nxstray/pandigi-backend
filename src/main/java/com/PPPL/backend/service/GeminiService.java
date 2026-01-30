@@ -1,8 +1,8 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.data.LeadScoringRequest;
-import com.PPPL.backend.data.LeadScoringResponse;
-import com.PPPL.backend.model.RequestLayanan;
+import com.PPPL.backend.data.lead.LeadScoringRequest;
+import com.PPPL.backend.data.lead.LeadScoringResponse;
+import com.PPPL.backend.model.layanan.RequestLayanan;
 import com.PPPL.backend.repository.RequestLayananRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

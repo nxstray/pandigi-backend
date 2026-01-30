@@ -1,9 +1,10 @@
 package com.PPPL.backend.repository;
 
-import com.PPPL.backend.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import com.PPPL.backend.model.notification.Notification;
 
 import java.util.List;
 

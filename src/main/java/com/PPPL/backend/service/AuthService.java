@@ -1,10 +1,10 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.data.AdminDTO;
-import com.PPPL.backend.data.LoginRequest;
-import com.PPPL.backend.data.LoginResponse;
-import com.PPPL.backend.model.Admin;
+import com.PPPL.backend.data.admin.AdminDTO;
+import com.PPPL.backend.data.auth.LoginRequest;
+import com.PPPL.backend.data.auth.LoginResponse;
 import com.PPPL.backend.handler.ResourceNotFoundException;
+import com.PPPL.backend.model.admin.Admin;
 import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;

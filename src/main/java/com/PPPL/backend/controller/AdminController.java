@@ -1,8 +1,8 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.AdminDTO;
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.RegisterManagerRequest;
+import com.PPPL.backend.data.admin.AdminDTO;
+import com.PPPL.backend.data.admin.RegisterManagerRequest;
+import com.PPPL.backend.data.common.ApiResponse;
 import com.PPPL.backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package com.PPPL.backend.config;
 
-import com.PPPL.backend.model.Admin;
-import com.PPPL.backend.model.AdminRole;
+import com.PPPL.backend.model.admin.Admin;
+import com.PPPL.backend.model.enums.AdminRole;
 import com.PPPL.backend.repository.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

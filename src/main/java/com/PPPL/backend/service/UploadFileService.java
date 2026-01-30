@@ -1,6 +1,6 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.model.UploadFile;
+import com.PPPL.backend.model.file.UploadFile;
 import com.PPPL.backend.repository.UploadFileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

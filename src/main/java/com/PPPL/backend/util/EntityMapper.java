@@ -1,7 +1,18 @@
 package com.PPPL.backend.util;
 
-import com.PPPL.backend.data.*;
-import com.PPPL.backend.model.*;
+import com.PPPL.backend.data.admin.KaryawanDTO;
+import com.PPPL.backend.data.admin.ManagerDTO;
+import com.PPPL.backend.data.client.KlienDTO;
+import com.PPPL.backend.data.layanan.LayananDTO;
+import com.PPPL.backend.data.layanan.RequestLayananDTO;
+import com.PPPL.backend.data.rekap.RekapDTO;
+import com.PPPL.backend.model.admin.Karyawan;
+import com.PPPL.backend.model.admin.Klien;
+import com.PPPL.backend.model.admin.Manager;
+import com.PPPL.backend.model.layanan.Layanan;
+import com.PPPL.backend.model.layanan.RequestLayanan;
+import com.PPPL.backend.model.rekap.Rekap;
+
 import org.springframework.stereotype.Component;
 
 @Component

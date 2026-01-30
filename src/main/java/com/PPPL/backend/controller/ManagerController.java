@@ -1,10 +1,10 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.ManagerDTO;
-import com.PPPL.backend.model.Admin;
-import com.PPPL.backend.model.Layanan;
-import com.PPPL.backend.model.Manager;
+import com.PPPL.backend.data.admin.ManagerDTO;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.model.admin.Admin;
+import com.PPPL.backend.model.admin.Manager;
+import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.repository.ManagerRepository;
 
 import jakarta.transaction.Transactional;

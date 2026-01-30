@@ -3,8 +3,8 @@ package com.PPPL.backend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.PPPL.backend.model.RequestLayanan;
-import com.PPPL.backend.model.StatusRequest;
+import com.PPPL.backend.model.enums.StatusRequest;
+import com.PPPL.backend.model.layanan.RequestLayanan;
 
 import java.util.List;
 

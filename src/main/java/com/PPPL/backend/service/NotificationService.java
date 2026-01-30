@@ -1,7 +1,7 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.data.NotificationDTO;
-import com.PPPL.backend.model.Notification;
+import com.PPPL.backend.data.notification.NotificationDTO;
+import com.PPPL.backend.model.notification.Notification;
 import com.PPPL.backend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.NotificationDTO;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.data.notification.NotificationDTO;
 import com.PPPL.backend.event.NotificationEventPublisher;
 import com.PPPL.backend.service.EmailService;
 import com.PPPL.backend.service.NotificationService;

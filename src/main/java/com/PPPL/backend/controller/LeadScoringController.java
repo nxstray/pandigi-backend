@@ -1,11 +1,11 @@
 package com.PPPL.backend.controller;
 
 import com.PPPL.backend.config.RateLimiterConfig;
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.LeadAnalysisDTO;
-import com.PPPL.backend.data.LeadScoringResponse;
-import com.PPPL.backend.model.RequestLayanan;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.data.lead.LeadAnalysisDTO;
+import com.PPPL.backend.data.lead.LeadScoringResponse;
 import com.PPPL.backend.handler.RateLimitExceededException;
+import com.PPPL.backend.model.layanan.RequestLayanan;
 import com.PPPL.backend.repository.RequestLayananRepository;
 import com.PPPL.backend.security.JwtUtil;
 import com.PPPL.backend.service.GeminiService;

@@ -1,10 +1,10 @@
 package com.PPPL.backend.service;
 
-import com.PPPL.backend.data.AdminDTO;
-import com.PPPL.backend.data.RegisterManagerRequest;
-import com.PPPL.backend.model.Admin;
-import com.PPPL.backend.model.AdminRole;
-import com.PPPL.backend.model.Manager;
+import com.PPPL.backend.data.admin.AdminDTO;
+import com.PPPL.backend.data.admin.RegisterManagerRequest;
+import com.PPPL.backend.model.admin.Admin;
+import com.PPPL.backend.model.admin.Manager;
+import com.PPPL.backend.model.enums.AdminRole;
 import com.PPPL.backend.repository.AdminRepository;
 import com.PPPL.backend.repository.ManagerRepository;
 import org.springframework.beans.factory.annotation.Autowired;

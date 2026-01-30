@@ -1,9 +1,9 @@
 package com.PPPL.backend.controller;
 
-import com.PPPL.backend.data.ApiResponse;
-import com.PPPL.backend.data.LayananDTO;
-import com.PPPL.backend.model.KategoriLayanan;
-import com.PPPL.backend.model.Layanan;
+import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.data.layanan.LayananDTO;
+import com.PPPL.backend.model.enums.KategoriLayanan;
+import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.repository.LayananRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

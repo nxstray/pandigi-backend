@@ -3,8 +3,8 @@ package com.PPPL.backend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.PPPL.backend.model.KategoriLayanan;
-import com.PPPL.backend.model.Layanan;
+import com.PPPL.backend.model.enums.KategoriLayanan;
+import com.PPPL.backend.model.layanan.Layanan;
 
 import java.util.List;
 
