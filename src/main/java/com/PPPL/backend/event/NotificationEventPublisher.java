@@ -1,6 +1,6 @@
 package com.PPPL.backend.event;
 
-import com.PPPL.backend.config.RabbitMQConfig;
+import com.PPPL.backend.config.rabbitmq.RabbitMQConfig;
 import com.PPPL.backend.data.notification.NotificationEventDTO;
 
 import lombok.extern.slf4j.Slf4j;

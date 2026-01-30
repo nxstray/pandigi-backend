@@ -1,11 +1,12 @@
 package com.PPPL.backend.event;
 
-import com.PPPL.backend.config.RabbitMQConfig;
+import com.PPPL.backend.config.rabbitmq.RabbitMQConfig;
 import com.PPPL.backend.data.notification.NotificationDTO;
 import com.PPPL.backend.data.notification.NotificationEventDTO;
 import com.PPPL.backend.model.notification.Notification;
-import com.PPPL.backend.service.EmailService;
-import com.PPPL.backend.service.NotificationService;
+import com.PPPL.backend.service.email.EmailService;
+import com.PPPL.backend.service.notification.NotificationService;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
