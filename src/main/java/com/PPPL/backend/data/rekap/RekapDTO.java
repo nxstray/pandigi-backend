@@ -13,11 +13,11 @@ import com.PPPL.backend.model.enums.StatusRekap;
 public class RekapDTO {
     private Integer idMeeting;
     private Integer idKlien;
-    private String namaKlien; // buat display di FE
-    private Integer idManager;
-    private String namaManager; // buat display di FE
+    private String namaKlien;
+    private String namaManager;
+    private String namaManagerManual;
     private Integer idLayanan;
-    private String namaLayanan; // buat display di FE
+    private String namaLayanan;
     private Date tglMeeting;
     private String hasil;
     private StatusRekap status;
