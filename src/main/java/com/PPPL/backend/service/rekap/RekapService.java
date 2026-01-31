@@ -2,11 +2,9 @@ package com.PPPL.backend.service.rekap;
 
 import com.PPPL.backend.data.rekap.RekapDTO;
 import com.PPPL.backend.model.admin.Klien;
-import com.PPPL.backend.model.admin.Manager;
 import com.PPPL.backend.model.enums.StatusRekap;
 import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.model.rekap.Rekap;
-import com.PPPL.backend.repository.admin.ManagerRepository;
 import com.PPPL.backend.repository.client.KlienRepository;
 import com.PPPL.backend.repository.layanan.LayananRepository;
 import com.PPPL.backend.repository.rekap.RekapRepository;
@@ -24,9 +22,6 @@ public class RekapService {
 
     @Autowired
     private KlienRepository klienRepository;
-
-    @Autowired
-    private ManagerRepository managerRepository;
 
     @Autowired
     private LayananRepository layananRepository;
@@ -62,8 +57,9 @@ public class RekapService {
                 .orElseThrow(() -> new RuntimeException("Rekap tidak ditemukan"));
 
         // ================= VALIDASI KEPEMILIKAN =================
+        // Untuk data lama yang masih punya relasi manager
         if ("MANAGER".equals(auth.role())) {
-            if (!rekap.getManager().getIdManager().equals(auth.userId())) {
+            if (rekap.getManager() != null && !rekap.getManager().getIdManager().equals(auth.userId())) {
                 throw new SecurityException("Anda tidak berhak mengubah rekap ini");
             }
         }
@@ -77,10 +73,9 @@ public class RekapService {
                 rekap.setKlien(klien);
             }
 
-            if (dto.getIdManager() != null) {
-                Manager manager = managerRepository.findById(dto.getIdManager())
-                        .orElseThrow(() -> new RuntimeException("Manager tidak ditemukan"));
-                rekap.setManager(manager);
+            if (dto.getNamaManagerManual() != null && !dto.getNamaManagerManual().trim().isEmpty()) {
+                rekap.setNamaManagerManual(dto.getNamaManagerManual().trim());
+                rekap.setManager(null); // Clear relasi manager lama jika ada
             }
 
             if (dto.getIdLayanan() != null) {
