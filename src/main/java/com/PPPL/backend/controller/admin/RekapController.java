@@ -3,11 +3,9 @@ package com.PPPL.backend.controller.admin;
 import com.PPPL.backend.data.common.ApiResponse;
 import com.PPPL.backend.data.rekap.RekapDTO;
 import com.PPPL.backend.model.admin.Klien;
-import com.PPPL.backend.model.admin.Manager;
 import com.PPPL.backend.model.enums.StatusRekap;
 import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.model.rekap.Rekap;
-import com.PPPL.backend.repository.admin.ManagerRepository;
 import com.PPPL.backend.repository.client.KlienRepository;
 import com.PPPL.backend.repository.layanan.LayananRepository;
 import com.PPPL.backend.repository.rekap.RekapRepository;
@@ -34,9 +32,6 @@ public class RekapController {
     
     @Autowired
     private KlienRepository klienRepository;
-    
-    @Autowired
-    private ManagerRepository managerRepository;
     
     @Autowired
     private LayananRepository layananRepository;
@@ -92,14 +87,17 @@ public class RekapController {
                 return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Klien wajib dipilih"));
             }
-            if (dto.getIdManager() == null) {
+            
+            if (dto.getNamaManagerManual() == null || dto.getNamaManagerManual().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Manager wajib dipilih"));
+                    .body(ApiResponse.error("Nama manager wajib diisi"));
             }
+            
             if (dto.getIdLayanan() == null) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Layanan wajib dipilih"));
             }
+            
             if (dto.getTglMeeting() == null) {
                 return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Tanggal meeting wajib diisi"));
@@ -108,15 +106,15 @@ public class RekapController {
             // Get entities
             Klien klien = klienRepository.findById(dto.getIdKlien())
                 .orElseThrow(() -> new RuntimeException("Klien tidak ditemukan"));
-            Manager manager = managerRepository.findById(dto.getIdManager())
-                .orElseThrow(() -> new RuntimeException("Manager tidak ditemukan"));
+            
             Layanan layanan = layananRepository.findById(dto.getIdLayanan())
                 .orElseThrow(() -> new RuntimeException("Layanan tidak ditemukan"));
             
             // Create entity
             Rekap rekap = new Rekap();
             rekap.setKlien(klien);
-            rekap.setManager(manager);
+            rekap.setManager(null);
+            rekap.setNamaManagerManual(dto.getNamaManagerManual().trim());
             rekap.setLayanan(layanan);
             rekap.setTglMeeting(dto.getTglMeeting());
             rekap.setHasil(dto.getHasil());
@@ -143,13 +141,21 @@ public class RekapController {
             @PathVariable Integer id,
             @RequestBody RekapDTO dto
     ) {
-        AuthUser auth = AuthUser.fromContext();
-
-        Rekap updated = rekapService.updateRekap(id, dto, auth);
-
-        return ResponseEntity.ok(
-            ApiResponse.success("Rekap meeting berhasil diupdate", convertToDTO(updated))
-        );
+        try {
+            AuthUser auth = AuthUser.fromContext();
+            Rekap updated = rekapService.updateRekap(id, dto, auth);
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("Rekap meeting berhasil diupdate", convertToDTO(updated))
+            );
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Gagal update rekap: " + e.getMessage()));
+        }
     }
     
     /**
@@ -185,8 +191,19 @@ public class RekapController {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = keyword.toLowerCase();
                 rekap = rekap.stream()
-                    .filter(r -> r.getKlien().getNamaKlien().toLowerCase().contains(kw) ||
-                               r.getManager().getNamaManager().toLowerCase().contains(kw))
+                    .filter(r -> {
+                        boolean matchKlien = r.getKlien().getNamaKlien().toLowerCase().contains(kw);
+                        
+                        // Cek nama manager manual dulu, kalau null baru cek manager entity
+                        boolean matchManager = false;
+                        if (r.getNamaManagerManual() != null && !r.getNamaManagerManual().isEmpty()) {
+                            matchManager = r.getNamaManagerManual().toLowerCase().contains(kw);
+                        } else if (r.getManager() != null) {
+                            matchManager = r.getManager().getNamaManager().toLowerCase().contains(kw);
+                        }
+                        
+                        return matchKlien || matchManager;
+                    })
                     .collect(Collectors.toList());
             }
             
@@ -237,7 +254,7 @@ public class RekapController {
         try {
             List<RekapDTO> rekap = rekapRepository.findAll()
                 .stream()
-                .filter(r -> r.getManager().getIdManager().equals(idManager))
+                .filter(r -> r.getManager() != null && r.getManager().getIdManager().equals(idManager))
                 .map(this::convertToDTO)
                 .sorted((a, b) -> b.getTglMeeting().compareTo(a.getTglMeeting()))
                 .collect(Collectors.toList());
@@ -250,20 +267,31 @@ public class RekapController {
     }
     
     // ========== HELPER METHODS ==========
-    
     private RekapDTO convertToDTO(Rekap rekap) {
         RekapDTO dto = new RekapDTO();
         dto.setIdMeeting(rekap.getIdMeeting());
         dto.setIdKlien(rekap.getKlien().getIdKlien());
         dto.setNamaKlien(rekap.getKlien().getNamaKlien());
-        dto.setIdManager(rekap.getManager().getIdManager());
-        dto.setNamaManager(rekap.getManager().getNamaManager());
+        
+        // Prioritaskan namaManagerManual, fallback ke manager entity untuk data lama
+        if (rekap.getNamaManagerManual() != null && !rekap.getNamaManagerManual().isEmpty()) {
+            dto.setNamaManager(rekap.getNamaManagerManual());
+            dto.setNamaManagerManual(rekap.getNamaManagerManual());
+        } else if (rekap.getManager() != null) {
+            dto.setNamaManager(rekap.getManager().getNamaManager());
+            dto.setNamaManagerManual(rekap.getManager().getNamaManager());
+        } else {
+            dto.setNamaManager("-");
+            dto.setNamaManagerManual("-");
+        }
+        
         dto.setIdLayanan(rekap.getLayanan().getIdLayanan());
         dto.setNamaLayanan(rekap.getLayanan().getNamaLayanan());
         dto.setTglMeeting(rekap.getTglMeeting());
         dto.setHasil(rekap.getHasil());
         dto.setStatus(rekap.getStatus());
         dto.setCatatan(rekap.getCatatan());
+        
         return dto;
     }
 }
