@@ -98,7 +98,6 @@ public class EntityMapper {
         }
         
         if (rekap.getManager() != null) {
-            dto.setIdManager(rekap.getManager().getIdManager());
             dto.setNamaManager(rekap.getManager().getNamaManager());
         }
         
