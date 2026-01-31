@@ -28,8 +28,11 @@ public class Rekap {
     private Klien klien;
     
     @ManyToOne
-    @JoinColumn(name = "id_manager", nullable = false)
+    @JoinColumn(name = "id_manager", nullable = true)
     private Manager manager;
+    
+    @Column(name = "nama_manager_manual", length = 100)
+    private String namaManagerManual;
     
     @ManyToOne
     @JoinColumn(name = "id_layanan", nullable = false)
