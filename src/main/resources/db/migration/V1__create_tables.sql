@@ -184,3 +184,29 @@ CREATE INDEX idx_rekap_manager ON rekap(id_manager);
 CREATE INDEX idx_rekap_layanan ON rekap(id_layanan);
 CREATE INDEX idx_rekap_status ON rekap(status);
 CREATE INDEX idx_rekap_tgl ON rekap(tgl_meeting);
+
+-- ============ PROJECTS TABLE ============
+CREATE TABLE projects (
+    id_project SERIAL PRIMARY KEY,
+    project_title VARCHAR(200) NOT NULL,
+    project_description TEXT,
+    project_category VARCHAR(50) NOT NULL CHECK (project_category IN ('WEB_DEVELOPMENT', 'MOBILE_APP', 'UI_UX_DESIGN', 'DIGITAL_MARKETING', 'AI_ML', 'CLOUD_INFRASTRUCTURE', 'OTHER')),
+    project_image TEXT,
+    project_client VARCHAR(150),
+    project_year INTEGER,
+    project_technologies TEXT,
+    project_url VARCHAR(500),
+    is_featured BOOLEAN DEFAULT FALSE,
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_by_admin_id INTEGER,
+    CONSTRAINT fk_project_admin FOREIGN KEY (updated_by_admin_id) REFERENCES admin(id_admin) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_project_category ON projects(project_category);
+CREATE INDEX idx_project_year ON projects(project_year);
+CREATE INDEX idx_project_active ON projects(is_active);
+CREATE INDEX idx_project_featured ON projects(is_featured);
+CREATE INDEX idx_project_order ON projects(display_order);
