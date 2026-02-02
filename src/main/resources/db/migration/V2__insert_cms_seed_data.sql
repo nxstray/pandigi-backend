@@ -56,18 +56,13 @@ INSERT INTO content_page (page_name, section_key, content_type, content_value, c
 ('LANDING', 'portfolio_3_title', 'TEXT', 'Mobile Application', 'Landing - Portfolio 3 Title', 75, true),
 ('LANDING', 'portfolio_3_image', 'IMAGE_URL', 'dummy-photo.png', 'Landing - Portfolio 3 Image', 76, true);
 
--- Contact Section
+-- Footer Section
 INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES
-('LANDING', 'contact_title', 'TEXT', 'Get in touch with us', 'Landing - Contact Title', 100, true),
-('LANDING', 'contact_phone_title', 'TEXT', 'Phone', 'Landing - Contact Phone Title', 101, true),
-('LANDING', 'contact_phone_description', 'TEXT', '+62 21 1234 5678 - Tersedia Senin hingga Jumat, 9 AM - 5 PM', 'Landing - Contact Phone Description', 102, true),
-('LANDING', 'contact_email_title', 'TEXT', 'Email', 'Landing - Contact Email Title', 103, true),
-('LANDING', 'contact_email_description', 'TEXT', 'info@pandawadigital.com - Kami akan merespons dalam 24 jam', 'Landing - Contact Email Description', 104, true),
-('LANDING', 'contact_social_title', 'TEXT', 'Social', 'Landing - Contact Social Title', 105, true),
-('LANDING', 'contact_social_link_1', 'TEXT', 'https://facebook.com/pandawadigital', 'Landing - Contact Social Link Facebook', 106, true),
-('LANDING', 'contact_social_link_2', 'TEXT', 'https://instagram.com/pandawadigital', 'Landing - Contact Social Link Instagram', 107, true),
-('LANDING', 'contact_social_link_3', 'TEXT', 'https://linkedin.com/company/pandawadigital', 'Landing - Contact Social Link LinkedIn', 108, true),
-('LANDING', 'contact_logo_image', 'IMAGE_URL', 'logo-text.png', 'Landing - Contact Logo Image', 109, true);
+('LANDING', 'footer_address_line1', 'TEXT', 'Jl. Perjuangan KP Cakung No. 44 RT/RW 004/004', 'Landing - Footer Address Line 1', 100, true),
+('LANDING', 'footer_address_line2', 'TEXT', 'Kel. Jatisari, Kec. Jatiasih, Kota Bekasi, Provinsi : Jawa Barat, kode post : 17426', 'Landing - Footer Address Line 2', 101, true),
+('LANDING', 'footer_address_line3', 'TEXT', '0859 5944 1317 | ptpandawadigitalmandiri@gmail.com', 'Landing - Footer Address Line 3', 102, true),
+('LANDING', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'Landing - Footer Logo', 103, true),
+('LANDING', 'footer_copyright', 'TEXT', '© 2026 PT Pandawa Digital Mandiri', 'Landing - Footer Copyright', 104, true);
 
 -- ============ WHAT WE DO PAGE ============
 
@@ -130,18 +125,13 @@ INSERT INTO content_page (page_name, section_key, content_type, content_value, c
 ('WHAT_WE_DO', 'detail_computer_description', 'TEXT', 'Jangan biarkan masalah teknis menghambat produktivitas bisnis Anda. Layanan maintenance dan support IT kami mencakup troubleshooting, preventive maintenance, sistem upgrade, data recovery, dan technical support 24/7. Tim teknisi bersertifikat kami siap membantu memastikan infrastruktur IT Anda selalu dalam kondisi optimal.', 'Computer Detail Description', 41, true),
 ('WHAT_WE_DO', 'detail_computer_image', 'IMAGE_URL', 'dummy-photo.png', 'Computer Detail Image', 42, true);
 
--- Contact Section
-INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES 
-('WHAT_WE_DO', 'contact_title', 'TEXT', 'Get in touch with us', 'Contact Section Title', 90, true),
-('WHAT_WE_DO', 'contact_phone_title', 'TEXT', 'Phone', 'Contact Phone Label', 91, true),
-('WHAT_WE_DO', 'contact_phone_description', 'TEXT', '+62 21 1234 5678 - Tersedia Senin hingga Jumat, 09:00 - 17:00 WIB', 'Contact Phone Description', 92, true),
-('WHAT_WE_DO', 'contact_email_title', 'TEXT', 'Email', 'Contact Email Label', 93, true),
-('WHAT_WE_DO', 'contact_email_description', 'TEXT', 'info@pandawadigital.com - Kami akan merespons dalam 24 jam', 'Contact Email Description', 94, true),
-('WHAT_WE_DO', 'contact_social_title', 'TEXT', 'Social', 'Contact Social Label', 95, true),
-('WHAT_WE_DO', 'contact_social_link_1', 'TEXT', '#', 'Social Link 1 (Facebook)', 96, true),
-('WHAT_WE_DO', 'contact_social_link_2', 'TEXT', '#', 'Social Link 2 (Instagram)', 97, true),
-('WHAT_WE_DO', 'contact_social_link_3', 'TEXT', '#', 'Social Link 3 (LinkedIn)', 98, true),
-('WHAT_WE_DO', 'contact_logo_image', 'IMAGE_URL', 'logo-text.png', 'Contact Logo Image', 99, true);
+-- Footer Section
+INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES
+('WHAT_WE_DO', 'footer_address_line1', 'TEXT', 'Jl. Perjuangan KP Cakung No. 44 RT/RW 004/004', 'What We Do - Footer Address Line 1', 100, true),
+('WHAT_WE_DO', 'footer_address_line2', 'TEXT', 'Kel. Jatisari, Kec. Jatiasih, Kota Bekasi, Provinsi : Jawa Barat, kode post : 17426', 'What We Do - Footer Address Line 2', 101, true),
+('WHAT_WE_DO', 'footer_address_line3', 'TEXT', '0859 5944 1317 | ptpandawadigitalmandiri@gmail.com', 'What We Do - Footer Address Line 3', 102, true),
+('WHAT_WE_DO', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'What We Do - Footer Logo', 103, true),
+('WHAT_WE_DO', 'footer_copyright', 'TEXT', '© 2026 PT Pandawa Digital Mandiri', 'What We Do - Footer Copyright', 104, true);
 
 -- ============ WHO WE ARE PAGE ============
 
@@ -245,21 +235,15 @@ INSERT INTO content_page (page_name, section_key, content_type, content_value, c
 ('WHO_WE_ARE', 'review_4_description', 'TEXT', 'Dari konsultasi hingga implementasi, Pandigi menunjukkan profesionalisme tinggi. Hasilnya melebihi ekspektasi kami!', 'Review 4 Description', 87, true),
 ('WHO_WE_ARE', 'review_4_image', 'IMAGE_URL', 'dummy-photo.png', 'Review 4 Image', 88, true);
 
--- Contact Section
-INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES 
-('WHO_WE_ARE', 'contact_title', 'TEXT', 'Get in touch with us', 'Contact Section Title', 90, true),
-('WHO_WE_ARE', 'contact_phone_title', 'TEXT', 'Phone', 'Contact Phone Label', 91, true),
-('WHO_WE_ARE', 'contact_phone_description', 'TEXT', '+62 21 1234 5678 - Tersedia Senin hingga Jumat, 09:00 - 17:00 WIB', 'Contact Phone Description', 92, true),
-('WHO_WE_ARE', 'contact_email_title', 'TEXT', 'Email', 'Contact Email Label', 93, true),
-('WHO_WE_ARE', 'contact_email_description', 'TEXT', 'info@pandawadigital.com - Kami akan merespons dalam 24 jam', 'Contact Email Description', 94, true),
-('WHO_WE_ARE', 'contact_social_title', 'TEXT', 'Social', 'Contact Social Label', 95, true),
-('WHO_WE_ARE', 'contact_social_link_1', 'TEXT', '#', 'Social Link 1 (Facebook)', 96, true),
-('WHO_WE_ARE', 'contact_social_link_2', 'TEXT', '#', 'Social Link 2 (Instagram)', 97, true),
-('WHO_WE_ARE', 'contact_social_link_3', 'TEXT', '#', 'Social Link 3 (LinkedIn)', 98, true),
-('WHO_WE_ARE', 'contact_logo_image', 'IMAGE_URL', 'logo-text.png', 'Contact Logo Image', 99, true);
+-- Footer Section
+INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES
+('WHO_WE_ARE', 'footer_address_line1', 'TEXT', 'Jl. Perjuangan KP Cakung No. 44 RT/RW 004/004', 'Who We Are - Footer Address Line 1', 100, true),
+('WHO_WE_ARE', 'footer_address_line2', 'TEXT', 'Kel. Jatisari, Kec. Jatiasih, Kota Bekasi, Provinsi : Jawa Barat, kode post : 17426', 'Who We Are - Footer Address Line 2', 101, true),
+('WHO_WE_ARE', 'footer_address_line3', 'TEXT', '0859 5944 1317 | ptpandawadigitalmandiri@gmail.com', 'Who We Are - Footer Address Line 3', 102, true),
+('WHO_WE_ARE', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'Who We Are - Footer Logo', 103, true),
+('WHO_WE_ARE', 'footer_copyright', 'TEXT', '© 2026 PT Pandawa Digital Mandiri', 'Who We Are - Footer Copyright', 104, true);
 
 -- ============ OUR WORK PAGE ============
-
 -- Hero Section
 INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES 
 ('OUR_WORK', 'hero_title', 'TEXT', 'Our Work', 'Hero Title', 1, true),
@@ -267,18 +251,13 @@ INSERT INTO content_page (page_name, section_key, content_type, content_value, c
 ('OUR_WORK', 'hero_vector', 'IMAGE_URL', 'vector_logo_pandigi.png', 'Hero Vector Logo', 3, true),
 ('OUR_WORK', 'hero_building_image', 'IMAGE_URL', 'building.png', 'Hero Building Image', 4, true);
 
--- Contact Section
-INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES 
-('OUR_WORK', 'contact_title', 'TEXT', 'Get in touch with us', 'Contact Section Title', 90, true),
-('OUR_WORK', 'contact_phone_title', 'TEXT', 'Phone', 'Contact Phone Label', 91, true),
-('OUR_WORK', 'contact_phone_description', 'TEXT', '+62 21 1234 5678 - Tersedia Senin hingga Jumat, 09:00 - 17:00 WIB', 'Contact Phone Description', 92, true),
-('OUR_WORK', 'contact_email_title', 'TEXT', 'Email', 'Contact Email Label', 93, true),
-('OUR_WORK', 'contact_email_description', 'TEXT', 'info@pandawadigital.com - Kami akan merespons dalam 24 jam', 'Contact Email Description', 94, true),
-('OUR_WORK', 'contact_social_title', 'TEXT', 'Social', 'Contact Social Label', 95, true),
-('OUR_WORK', 'contact_social_link_1', 'TEXT', '#', 'Social Link 1 (Facebook)', 96, true),
-('OUR_WORK', 'contact_social_link_2', 'TEXT', '#', 'Social Link 2 (Instagram)', 97, true),
-('OUR_WORK', 'contact_social_link_3', 'TEXT', '#', 'Social Link 3 (LinkedIn)', 98, true),
-('OUR_WORK', 'contact_logo_image', 'IMAGE_URL', 'logo-text.png', 'Contact Logo Image', 99, true);
+-- Footer Section
+INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES
+('OUR_WORK', 'footer_address_line1', 'TEXT', 'Jl. Perjuangan KP Cakung No. 44 RT/RW 004/004', 'Our Work - Footer Address Line 1', 100, true),
+('OUR_WORK', 'footer_address_line2', 'TEXT', 'Kel. Jatisari, Kec. Jatiasih, Kota Bekasi, Provinsi : Jawa Barat, kode post : 17426', 'Our Work - Footer Address Line 2', 101, true),
+('OUR_WORK', 'footer_address_line3', 'TEXT', '0859 5944 1317 | ptpandawadigitalmandiri@gmail.com', 'Our Work - Footer Address Line 3', 102, true),
+('OUR_WORK', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'Our Work - Footer Logo', 103, true),
+('OUR_WORK', 'footer_copyright', 'TEXT', '© 2026 PT Pandawa Digital Mandiri', 'Our Work - Footer Copyright', 104, true);
 
 -- ============ BUILD WITH US PAGE ============
 
@@ -296,8 +275,9 @@ INSERT INTO content_page (page_name, section_key, content_type, content_value, c
 ('BUILD_WITH_US', 'form_section_description', 'TEXT', 'Ceritakan kebutuhan project Anda dan tim kami akan segera menghubungi untuk memberikan solusi terbaik.', 'Form Section Description', 12, true);
 
 -- Footer Section
-INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES 
-('BUILD_WITH_US', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'Footer Logo', 90, true),
-('BUILD_WITH_US', 'footer_text', 'TEXT', 'PT. Pandawa Digital Mandiri - Mitra terpercaya untuk transformasi digital bisnis Anda sejak 2010.', 'Footer Text', 91, true),
-('BUILD_WITH_US', 'footer_social_link_1', 'TEXT', '#', 'Footer Social Link 1', 92, true),
-('BUILD_WITH_US', 'footer_social_link_2', 'TEXT', '#', 'Footer Social Link 2', 93, true);
+INSERT INTO content_page (page_name, section_key, content_type, content_value, content_label, display_order, is_active) VALUES
+('BUILD_WITH_US', 'footer_address_line1', 'TEXT', 'Jl. Perjuangan KP Cakung No. 44 RT/RW 004/004', 'Build With Us - Footer Address Line 1', 100, true),
+('BUILD_WITH_US', 'footer_address_line2', 'TEXT', 'Kel. Jatisari, Kec. Jatiasih, Kota Bekasi, Provinsi : Jawa Barat, kode post : 17426', 'Build With Us - Footer Address Line 2', 101, true),
+('BUILD_WITH_US', 'footer_address_line3', 'TEXT', '0859 5944 1317 | ptpandawadigitalmandiri@gmail.com', 'Build With Us - Footer Address Line 3', 102, true),
+('BUILD_WITH_US', 'footer_logo', 'IMAGE_URL', 'logo-no-bg.png', 'Build With Us - Footer Logo', 103, true),
+('BUILD_WITH_US', 'footer_copyright', 'TEXT', '© 2026 PT Pandawa Digital Mandiri', 'Build With Us - Footer Copyright', 104, true);
