@@ -31,3 +31,17 @@ build/
 
 ### VS Code ###
 .vscode/
+uploads/
+
+### Environment Variables (CONFIDENTIAL!) ###
+.env
+.env.local
+.env.production
+.env.development
+
+### Application Properties with Sensitive Data ###
+application-local.properties
+
+### Logs ###
+logs/
+*.log
