@@ -7,6 +7,7 @@ import com.PPPL.backend.data.auth.LoginRequest;
 import com.PPPL.backend.data.auth.LoginResponse;
 import com.PPPL.backend.data.auth.ResetPasswordRequest;
 import com.PPPL.backend.data.common.ApiResponse;
+import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.security.JwtUtil;
 import com.PPPL.backend.service.auth.AuthService;
 
@@ -166,14 +167,24 @@ public class AuthController {
             @RequestHeader("Authorization") String authHeader) {
         try {
             String token = authHeader.substring(7);
-            boolean isValid = jwtUtil.validateToken(token);
             
-            if (isValid) {
-                return ResponseEntity.ok(ApiResponse.success(true));
-            } else {
+            // Validate JWT token format
+            if (!jwtUtil.validateToken(token)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("Token tidak valid"));
             }
+            
+            String username = jwtUtil.getUsernameFromToken(token);
+            
+            // Cek db - akan throw exception jika user tidak ada
+            authService.getAdminByUsername(username);
+            
+            return ResponseEntity.ok(ApiResponse.success("Token valid", true));
+            
+        } catch (ResourceNotFoundException e) {
+            // User not found di database
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("User tidak ditemukan"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("Token tidak valid"));
