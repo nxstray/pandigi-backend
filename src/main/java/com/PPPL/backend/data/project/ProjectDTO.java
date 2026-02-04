@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -20,7 +19,7 @@ public class ProjectDTO {
     private Integer projectYear;
     
     // Optional field - will default to empty list if null
-    private List<String> projectTechnologies = new ArrayList<>();
+    private List<String> projectTechnologies;
     
     private String projectUrl;
     private Boolean isFeatured;
