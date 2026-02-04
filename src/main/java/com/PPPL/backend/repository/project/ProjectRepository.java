@@ -1,6 +1,5 @@
 package com.PPPL.backend.repository.project;
 
-import com.PPPL.backend.model.enums.ProjectCategory;
 import com.PPPL.backend.model.project.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,18 +22,30 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
     // Find featured projects
     List<Project> findByIsActiveTrueAndIsFeaturedTrueOrderByDisplayOrderAsc();
     
-    // Search with filters - Paginated
-    @Query("SELECT p FROM Project p WHERE p.isActive = true " +
-           "AND (:searchQuery IS NULL OR " +
-           "LOWER(p.projectTitle) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-           "LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
-           "LOWER(p.projectClient) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
-           "AND (:category IS NULL OR p.projectCategory = :category) " +
-           "AND (:year IS NULL OR p.projectYear = :year) " +
-           "ORDER BY p.displayOrder ASC")
+    // Search with filters - Native Query (fix bytea issue)
+    @Query(value = 
+        "SELECT * FROM projects p " +
+        "WHERE p.is_active = true " +
+        "AND (:searchQuery IS NULL OR " +
+        "    LOWER(p.project_title) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+        "    LOWER(p.project_description) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+        "    LOWER(p.project_client) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+        "AND (:category IS NULL OR p.project_category = :category) " +
+        "AND (:year IS NULL OR p.project_year = :year) " +
+        "ORDER BY p.display_order ASC",
+        countQuery = 
+        "SELECT COUNT(*) FROM projects p " +
+        "WHERE p.is_active = true " +
+        "AND (:searchQuery IS NULL OR " +
+        "    LOWER(p.project_title) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+        "    LOWER(p.project_description) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+        "    LOWER(p.project_client) LIKE LOWER(CONCAT('%', :searchQuery, '%'))) " +
+        "AND (:category IS NULL OR p.project_category = :category) " +
+        "AND (:year IS NULL OR p.project_year = :year)",
+        nativeQuery = true)
     Page<Project> searchProjects(
         @Param("searchQuery") String searchQuery,
-        @Param("category") ProjectCategory category,
+        @Param("category") String category,
         @Param("year") Integer year,
         Pageable pageable
     );
