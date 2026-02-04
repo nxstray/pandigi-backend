@@ -6,7 +6,6 @@ import com.PPPL.backend.security.AuthUser;
 import com.PPPL.backend.service.project.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,10 +42,10 @@ public class ProjectController {
     
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectDTO>> createProject(
-        @RequestBody CreateProjectRequest request,
-        @AuthenticationPrincipal AuthUser auth
+        @RequestBody CreateProjectRequest request
     ) {
         try {
+            AuthUser auth = AuthUser.fromContext();
             ProjectDTO created = projectService.createProject(request, auth);
             return ResponseEntity.ok(ApiResponse.success("Project berhasil dibuat", created));
         } catch (Exception e) {
@@ -58,10 +57,10 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectDTO>> updateProject(
         @PathVariable Integer id,
-        @RequestBody UpdateProjectRequest request,
-        @AuthenticationPrincipal AuthUser auth
+        @RequestBody UpdateProjectRequest request
     ) {
         try {
+            AuthUser auth = AuthUser.fromContext();
             ProjectDTO updated = projectService.updateProject(id, request, auth);
             return ResponseEntity.ok(ApiResponse.success("Project berhasil diupdate", updated));
         } catch (Exception e) {
