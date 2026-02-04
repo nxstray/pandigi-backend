@@ -64,7 +64,7 @@ public class ProjectService {
         
         Page<Project> projectPage = projectRepository.searchProjects(
             request.getSearchQuery(),
-            request.getCategory(),
+            request.getCategory() != null ? request.getCategory().name() : null,
             request.getYear(),
             pageable
         );
@@ -209,16 +209,9 @@ public class ProjectService {
             project.setIsFeatured(createReq.getIsFeatured() != null ? createReq.getIsFeatured() : false);
             project.setDisplayOrder(createReq.getDisplayOrder() != null ? createReq.getDisplayOrder() : 0);
             
-            // Convert technologies list to JSON string (null-safe)
-            if (createReq.getProjectTechnologies() != null && !createReq.getProjectTechnologies().isEmpty()) {
-                try {
-                    project.setProjectTechnologies(objectMapper.writeValueAsString(createReq.getProjectTechnologies()));
-                } catch (Exception e) {
-                    project.setProjectTechnologies(null); // Set null if error
-                }
-            } else {
-                project.setProjectTechnologies(null); // Explicitly set null for empty/null input
-            }
+            // Convert List<String> to JSON string
+            project.setProjectTechnologies(convertTechnologiesToJson(createReq.getProjectTechnologies()));
+            
         } else if (request instanceof UpdateProjectRequest updateReq) {
             project.setProjectTitle(updateReq.getProjectTitle());
             project.setProjectDescription(updateReq.getProjectDescription());
@@ -230,16 +223,24 @@ public class ProjectService {
             project.setIsFeatured(updateReq.getIsFeatured() != null ? updateReq.getIsFeatured() : false);
             project.setDisplayOrder(updateReq.getDisplayOrder() != null ? updateReq.getDisplayOrder() : 0);
             
-            // Convert technologies list to JSON string (null-safe)
-            if (updateReq.getProjectTechnologies() != null && !updateReq.getProjectTechnologies().isEmpty()) {
-                try {
-                    project.setProjectTechnologies(objectMapper.writeValueAsString(updateReq.getProjectTechnologies()));
-                } catch (Exception e) {
-                    project.setProjectTechnologies(null); // Set null if error
-                }
-            } else {
-                project.setProjectTechnologies(null); // Explicitly set null for empty/null input
-            }
+            // Convert List<String> to JSON string
+            project.setProjectTechnologies(convertTechnologiesToJson(updateReq.getProjectTechnologies()));
+        }
+    }
+
+    /**
+     * Helper method: Convert List<String> to JSON string
+     */
+    private String convertTechnologiesToJson(List<String> technologies) {
+        if (technologies == null || technologies.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return objectMapper.writeValueAsString(technologies);
+        } catch (Exception e) {
+            System.err.println("Failed to convert technologies to JSON: " + e.getMessage());
+            return null;
         }
     }
     
@@ -262,24 +263,22 @@ public class ProjectService {
         dto.setCreatedAt(project.getCreatedAt());
         dto.setUpdatedAt(project.getUpdatedAt());
         
-        // Parse JSON technologies (null-safe with default empty list)
+        // Parse JSON technologies string to List
+        List<String> technologies = new ArrayList<>();
         if (project.getProjectTechnologies() != null && !project.getProjectTechnologies().trim().isEmpty()) {
             try {
-                List<String> techs = objectMapper.readValue(
+                technologies = objectMapper.readValue(
                     project.getProjectTechnologies(),
                     new TypeReference<List<String>>() {}
                 );
-                // Set only if successfully parsed and not empty
-                dto.setProjectTechnologies(techs != null ? techs : new ArrayList<>());
             } catch (Exception e) {
-                // If parsing fails, set empty list
-                dto.setProjectTechnologies(new ArrayList<>());
+                // If JSON parsing fails, log and keep empty list
+                System.err.println("Failed to parse project technologies for project " + project.getIdProject() + ": " + e.getMessage());
             }
-        } else {
-            // If null or empty string, set empty list
-            dto.setProjectTechnologies(new ArrayList<>());
         }
+        dto.setProjectTechnologies(technologies);
         
+        // Set updated by name
         if (project.getUpdatedBy() != null) {
             dto.setUpdatedByName(project.getUpdatedBy().getNamaLengkap());
         }
