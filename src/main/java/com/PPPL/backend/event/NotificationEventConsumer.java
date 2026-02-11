@@ -163,27 +163,6 @@ public class NotificationEventConsumer {
                         margin-bottom: 15px;
                         text-align: justify;
                     }
-                    .info-detail {
-                        background: #f7fafc;
-                        padding: 20px 25px;
-                        border-left: 4px solid #0C2B40;
-                        border-radius: 6px;
-                        margin: 25px 0;
-                    }
-                    .info-row {
-                        margin: 12px 0;
-                        font-size: 15px;
-                    }
-                    .info-label {
-                        color: #718096;
-                        display: inline-block;
-                        width: 160px;
-                        font-weight: 500;
-                    }
-                    .info-value {
-                        color: #2d3748;
-                        font-weight: 600;
-                    }
                     .divider {
                         height: 1px;
                         background: #e2e8f0;
@@ -223,21 +202,6 @@ public class NotificationEventConsumer {
                             serta kebutuhan teknis yang disampaikan, kami menyimpulkan bahwa request Anda memenuhi kriteria dan standar kualitas yang kami tetapkan.
                         </p>
                         
-                        <div class="info-detail">
-                            <div class="info-row">
-                                <span class="info-label">Layanan yang Diminta</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Status Verifikasi</span>
-                                <span class="info-value">Disetujui</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Diverifikasi oleh</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                        </div>
-                        
                         <div class="section-title">Langkah Selanjutnya</div>
                         <p class="content-text">
                             Tim teknis kami akan segera menghubungi Anda melalui email atau telepon dalam 1-2 hari kerja untuk membahas detail teknis pelaksanaan proyek, 
@@ -259,10 +223,10 @@ public class NotificationEventConsumer {
                             </p>
                             <p class="footer-text" style="margin-top: 15px; color: #4a5568;">
                                 <strong>PT. Pandawa Digital Mandiri</strong><br>
-                                Email: support@pandawadigital.com | Telepon: (021) 1234-5678
+                                Email: ptpandawadigitalmandiri@gmail.com | Telepon: +62 859 5944 1317
                             </p>
                             <p class="copyright">
-                                © 2025 PT. Pandawa Digital Mandiri. All rights reserved.
+                                © 2026 PT. Pandawa Digital Mandiri. All rights reserved.
                             </p>
                         </div>
                     </div>
@@ -270,9 +234,7 @@ public class NotificationEventConsumer {
             </body>
             </html>
             """,
-            event.getNamaKlien(),
-            event.getNamaLayanan(),
-            event.getKeterangan()
+            event.getNamaKlien()
         );
     }
     
@@ -324,53 +286,12 @@ public class NotificationEventConsumer {
                         margin-bottom: 25px;
                         font-weight: 500;
                     }
-                    .section-title {
-                        font-size: 16px;
-                        color: #0C2B40;
-                        font-weight: 600;
-                        margin: 30px 0 15px 0;
-                        letter-spacing: 0.3px;
-                    }
                     .content-text {
                         font-size: 15px;
                         line-height: 1.8;
                         color: #4a5568;
                         margin-bottom: 15px;
                         text-align: justify;
-                    }
-                    .info-detail {
-                        background: #f7fafc;
-                        padding: 20px 25px;
-                        border-left: 4px solid #0C2B40;
-                        border-radius: 6px;
-                        margin: 25px 0;
-                    }
-                    .info-row {
-                        margin: 12px 0;
-                        font-size: 15px;
-                    }
-                    .info-label {
-                        color: #718096;
-                        display: inline-block;
-                        width: 160px;
-                        font-weight: 500;
-                    }
-                    .info-value {
-                        color: #2d3748;
-                        font-weight: 600;
-                    }
-                    .reason-box {
-                        background: #fff5f5;
-                        border-left: 4px solid #742a2a;
-                        padding: 20px 25px;
-                        border-radius: 6px;
-                        margin: 25px 0;
-                    }
-                    .reason-text {
-                        color: #742a2a;
-                        font-size: 15px;
-                        line-height: 1.8;
-                        margin: 0;
                     }
                     .divider {
                         height: 1px;
@@ -412,38 +333,10 @@ public class NotificationEventConsumer {
                             dengan berat hati kami informasikan bahwa request layanan Anda belum dapat kami proses pada tahap ini.
                         </p>
                         
-                        <div class="info-detail">
-                            <div class="info-row">
-                                <span class="info-label">Layanan yang Diminta</span>
-                                <span class="info-value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Status Verifikasi</span>
-                                <span class="info-value">Tidak Disetujui</span>
-                            </div>
-                        </div>
-                        
-                        <div class="section-title">Alasan Penolakan</div>
-                        <div class="reason-box">
-                            <p class="reason-text">%s</p>
-                        </div>
-                        
                         <p class="content-text">
                             Kami memahami bahwa keputusan ini mungkin mengecewakan, namun kami berkomitmen untuk tetap transparan dalam setiap proses bisnis kami. 
                             Keputusan ini diambil setelah pertimbangan matang dari tim evaluasi kami dengan tujuan memastikan kualitas layanan yang optimal 
                             bagi seluruh klien kami.
-                        </p>
-                        
-                        <div class="section-title">Saran dan Tindak Lanjut</div>
-                        <p class="content-text">
-                            Apabila Anda berkenan untuk melakukan revisi terhadap proposal yang telah diajukan, kami dengan senang hati akan mempertimbangkan 
-                            kembali request Anda. Anda dapat menghubungi tim customer support kami untuk mendiskusikan kemungkinan penyesuaian yang dapat dilakukan, 
-                            baik dari segi scope pekerjaan, timeline, maupun aspek lainnya yang relevan.
-                        </p>
-                        
-                        <p class="content-text">
-                            Kami sangat menghargai minat Anda untuk bekerja sama dengan PT. Pandawa Digital Mandiri dan berharap dapat melayani Anda di kesempatan mendatang. 
-                            Jangan ragu untuk menghubungi kami jika Anda memiliki pertanyaan atau memerlukan klarifikasi lebih lanjut.
                         </p>
                         
                         <div class="divider"></div>
@@ -455,10 +348,10 @@ public class NotificationEventConsumer {
                             </p>
                             <p class="footer-text" style="margin-top: 15px; color: #4a5568;">
                                 <strong>PT. Pandawa Digital Mandiri</strong><br>
-                                Email: support@pandawadigital.com | Telepon: (021) 1234-5678
+                                Email: ptpandawadigitalmandiri@gmail.com | Telepon: +62 859 5944 1317
                             </p>
                             <p class="copyright">
-                                © 2025 PT. Pandawa Digital Mandiri. All rights reserved.
+                                © 2026 PT. Pandawa Digital Mandiri. All rights reserved.
                             </p>
                         </div>
                     </div>
@@ -466,9 +359,7 @@ public class NotificationEventConsumer {
             </body>
             </html>
             """,
-            event.getNamaKlien(),
-            event.getNamaLayanan(),
-            event.getKeterangan()
+            event.getNamaKlien()
         );
     }
 }
