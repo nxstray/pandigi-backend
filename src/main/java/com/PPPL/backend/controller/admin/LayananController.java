@@ -3,8 +3,7 @@ package com.PPPL.backend.controller.admin;
 import com.PPPL.backend.data.common.ApiResponse;
 import com.PPPL.backend.data.layanan.LayananDTO;
 import com.PPPL.backend.model.enums.KategoriLayanan;
-import com.PPPL.backend.model.layanan.Layanan;
-import com.PPPL.backend.repository.layanan.LayananRepository;
+import com.PPPL.backend.service.admin.LayananService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/layanan")
@@ -21,7 +19,7 @@ import java.util.stream.Collectors;
 public class LayananController {
     
     @Autowired
-    private LayananRepository layananRepository;
+    private LayananService layananService;
     
     /**
      * Get all layanan
@@ -29,11 +27,7 @@ public class LayananController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<LayananDTO>>> getAllLayanan() {
         try {
-            List<LayananDTO> layanan = layananRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-            
+            List<LayananDTO> layanan = layananService.getAllLayanan();
             return ResponseEntity.ok(ApiResponse.success(layanan));
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,10 +42,8 @@ public class LayananController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LayananDTO>> getLayananById(@PathVariable Integer id) {
         try {
-            Layanan layanan = layananRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-            
-            return ResponseEntity.ok(ApiResponse.success(convertToDTO(layanan)));
+            LayananDTO layanan = layananService.getLayananById(id);
+            return ResponseEntity.ok(ApiResponse.success(layanan));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error(e.getMessage()));
@@ -65,36 +57,9 @@ public class LayananController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<LayananDTO>> createLayanan(@RequestBody LayananDTO dto) {
         try {
-            // Validasi
-            if (dto.getNamaLayanan() == null || dto.getNamaLayanan().trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Nama layanan wajib diisi"));
-            }
-            
-            if (dto.getKategori() == null) {
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Kategori wajib dipilih"));
-            }
-            
-            // Check duplicate name
-            List<Layanan> existing = layananRepository
-                    .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
-
-            if (!existing.isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Nama layanan sudah terdaftar"));
-            }
-            
-            // Create entity
-            Layanan layanan = new Layanan();
-            layanan.setNamaLayanan(dto.getNamaLayanan());
-            layanan.setKategori(dto.getKategori());
-            layanan.setCatatan(dto.getCatatan());
-            
-            Layanan saved = layananRepository.save(layanan);
-            
+            LayananDTO created = layananService.createLayanan(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Layanan berhasil ditambahkan", convertToDTO(saved)));
+                .body(ApiResponse.success("Layanan berhasil ditambahkan", created));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
@@ -111,28 +76,9 @@ public class LayananController {
             @PathVariable Integer id, 
             @RequestBody LayananDTO dto) {
         try {
-            Layanan layanan = layananRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-            
-            // Check duplicate name (exclude current)
-            List<Layanan> existingList = layananRepository
-                    .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
-
-            for (Layanan existing : existingList) {
-                if (!existing.getIdLayanan().equals(id)) {
-                    throw new RuntimeException("Nama layanan sudah terdaftar");
-                }
-            }
-            
-            // Update fields
-            layanan.setNamaLayanan(dto.getNamaLayanan());
-            layanan.setKategori(dto.getKategori());
-            layanan.setCatatan(dto.getCatatan());
-            
-            Layanan updated = layananRepository.save(layanan);
-            
+            LayananDTO updated = layananService.updateLayanan(id, dto);
             return ResponseEntity.ok(
-                ApiResponse.success("Layanan berhasil diupdate", convertToDTO(updated)));
+                ApiResponse.success("Layanan berhasil diupdate", updated));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Gagal update layanan: " + e.getMessage()));
@@ -146,19 +92,7 @@ public class LayananController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteLayanan(@PathVariable Integer id) {
         try {
-            Layanan layanan = layananRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-            
-            // Check if layanan has requests
-            if (!layanan.getRequestLayananSet().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(
-                        "Layanan tidak dapat dihapus karena masih memiliki " + 
-                        layanan.getRequestLayananSet().size() + " request"));
-            }
-            
-            layananRepository.delete(layanan);
-            
+            layananService.deleteLayanan(id);
             return ResponseEntity.ok(ApiResponse.success("Layanan berhasil dihapus", null));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -174,27 +108,7 @@ public class LayananController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) KategoriLayanan kategori) {
         try {
-            List<Layanan> layanan = layananRepository.findAll();
-            
-            // Filter by keyword
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                String kw = keyword.toLowerCase();
-                layanan = layanan.stream()
-                    .filter(l -> l.getNamaLayanan().toLowerCase().contains(kw))
-                    .collect(Collectors.toList());
-            }
-            
-            // Filter by kategori
-            if (kategori != null) {
-                layanan = layanan.stream()
-                    .filter(l -> l.getKategori() == kategori)
-                    .collect(Collectors.toList());
-            }
-            
-            List<LayananDTO> result = layanan.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-            
+            List<LayananDTO> result = layananService.searchLayanan(keyword, kategori);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -209,27 +123,11 @@ public class LayananController {
     public ResponseEntity<ApiResponse<List<LayananDTO>>> getLayananByKategori(
             @PathVariable KategoriLayanan kategori) {
         try {
-            List<LayananDTO> layanan = layananRepository.findAll()
-                .stream()
-                .filter(l -> l.getKategori() == kategori)
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-            
+            List<LayananDTO> layanan = layananService.getLayananByKategori(kategori);
             return ResponseEntity.ok(ApiResponse.success(layanan));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Gagal load layanan: " + e.getMessage()));
         }
-    }
-    
-    // ========== HELPER METHODS ==========
-    
-    private LayananDTO convertToDTO(Layanan layanan) {
-        LayananDTO dto = new LayananDTO();
-        dto.setIdLayanan(layanan.getIdLayanan());
-        dto.setNamaLayanan(layanan.getNamaLayanan());
-        dto.setKategori(layanan.getKategori());
-        dto.setCatatan(layanan.getCatatan());
-        return dto;
     }
 }
