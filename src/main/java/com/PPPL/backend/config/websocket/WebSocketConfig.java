@@ -1,6 +1,7 @@
 package com.PPPL.backend.config.websocket;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -14,6 +15,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Autowired
     private WebSocketJwtInterceptor webSocketJwtInterceptor;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -23,13 +27,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        String frontendUrl = System.getenv("FRONTEND_URL");
-        String[] allowedOrigins = frontendUrl != null 
-            ? new String[]{"http://localhost:4200", frontendUrl}
-            : new String[]{"http://localhost:4200"};
-            
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins)
+                .setAllowedOrigins(
+                    // Local development
+                    "http://localhost:4200",
+                    
+                    // Production domains
+                    "https://www.pandawadigital.web.id",
+                    "https://pandawadigital.web.id",
+                    
+                    // Backup Vercel domain
+                    "https://pandigi.vercel.app",
+                    
+                    // Dynamic from properties
+                    frontendUrl
+                )
                 .withSockJS();
     }
 
