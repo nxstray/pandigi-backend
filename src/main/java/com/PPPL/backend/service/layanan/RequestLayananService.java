@@ -12,6 +12,8 @@ import com.PPPL.backend.repository.client.KlienRepository;
 import com.PPPL.backend.repository.layanan.RequestLayananRepository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,19 +54,39 @@ public class RequestLayananService {
         return requestLayananRepository.findByStatus(status);
     }
 
+    /**
+     * Public method - dipanggil controller
+     */
     public RequestLayananStatisticsDTO getStatistics() {
+        return getCachedStatistics();
+    }
+
+    /**
+     * Get statistics with Redis caching (5 minutes TTL)
+     */
+    @Cacheable(value = "requestStatistics", key = "'stats_v2'")
+    private RequestLayananStatisticsDTO getCachedStatistics() {
+        log.info("=== CACHE MISS: Calculating request statistics ===");
+        
         long total = requestLayananRepository.count();
         long menungguVerifikasi = requestLayananRepository.countByStatus(StatusRequest.MENUNGGU_VERIFIKASI);
         long diverifikasi = requestLayananRepository.countByStatus(StatusRequest.VERIFIKASI);
         long ditolak = requestLayananRepository.countByStatus(StatusRequest.DITOLAK);
 
-        return new RequestLayananStatisticsDTO(total, menungguVerifikasi, diverifikasi, ditolak);
+        RequestLayananStatisticsDTO result = new RequestLayananStatisticsDTO(
+            total, menungguVerifikasi, diverifikasi, ditolak
+        );
+        
+        log.info("=== Statistics calculated: {}", result);
+        return result;
     }
 
     /**
-     * APPROVE REQUEST - Klien masuk dengan status BELUM AKTIF
+     * APPROVE REQUEST - klien get in with default status (BELUM)
+     * Cache evicted on approval
      */
     @Transactional
+    @CacheEvict(value = {"requestStatistics", "leadScoring", "leadStatistics", "requestDetails"}, allEntries = true)
     public RequestLayanan approve(Integer id, Integer userId, String role) {
         RequestLayanan request = findById(id);
         
@@ -104,14 +126,16 @@ public class RequestLayananService {
                 approverName
         );
 
-        log.info("Request {} APPROVED by {} - Professional email sent via RabbitMQ", id, approverName);
+        log.info("Request {} APPROVED by {} - Caches evicted, email sent", id, approverName);
         return saved;
     }
 
     /**
-     * REJECT REQUEST - dikirim via RabbitMQ
+     * REJECT REQUEST - send via RabbitMQ
+     * Cache evicted on rejection
      */
     @Transactional
+    @CacheEvict(value = {"requestStatistics", "leadScoring", "leadStatistics", "requestDetails"}, allEntries = true)
     public RequestLayanan reject(Integer id, String keterangan) {
         RequestLayanan request = findById(id);
         
@@ -129,7 +153,7 @@ public class RequestLayananService {
         String namaLayanan = saved.getLayanan().getNamaLayanan();
         String emailKlien = saved.getKlien().getEmailKlien();
         
-        // kirim via RabbitMQ
+        // send via RabbitMQ
         notificationPublisher.publishFullNotificationWithDetails(
                 "REQUEST_REJECTED",
                 "Request Ditolak",
@@ -142,7 +166,7 @@ public class RequestLayananService {
                 keterangan
         );
 
-        log.info("Request {} REJECTED - Professional email sent via RabbitMQ", id);
+        log.info("Request {} REJECTED - Caches evicted, email sent", id);
         return saved;
     }
 
