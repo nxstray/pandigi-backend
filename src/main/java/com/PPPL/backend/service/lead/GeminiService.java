@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -32,9 +34,13 @@ public class GeminiService {
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
     
     /**
-     * Analisa lead menggunakan Gemini AI
+     * Analyze leads using Gemini AI
+     * CACHED: Results cached for 1 hour per idRequest
      */
+    @Cacheable(value = "leadScoring", key = "'analysis_' + #request.idRequest", unless = "#result.skorPrioritas == 'ERROR'")
     public LeadScoringResponse analyzeLead(LeadScoringRequest request) {
+        System.out.println("=== CACHE MISS: Calling Gemini API for lead " + request.getIdRequest() + " ===");
+        
         LeadScoringResponse result = new LeadScoringResponse();
         
         try {
@@ -43,13 +49,13 @@ public class GeminiService {
                 throw new RuntimeException("Gemini API Key tidak ditemukan. Pastikan GEMINI_API_KEY sudah di-set di environment variables.");
             }
             
-            // 1. Validasi data request
+            // 1. Validate data request
             validateLeadData(request);
             
             // 2. Build Prompt
             String prompt = buildAnalysisPrompt(request);
             
-            // 3. Prepare request body untuk Gemini API
+            // 3. Prepare request body for Gemini API
             Map<String, Object> requestBody = new HashMap<>();
             
             // Contents array
@@ -66,7 +72,7 @@ public class GeminiService {
             contents.add(content);
             requestBody.put("contents", contents);
             
-            // Generation config untuk output yang lebih konsisten
+            // Generation config for controlling output
             Map<String, Object> generationConfig = new HashMap<>();
             generationConfig.put("temperature", 0.2);
             generationConfig.put("topK", 20);
@@ -124,8 +130,8 @@ public class GeminiService {
                 
                 result = parseGeminiResponse(response.getBody());
                 
-                // 8. Save hasil analisa ke database
-                saveAnalysisResult(request.getIdRequest(), result);
+                // 8. Save analysis result to database & evict cache
+                saveAnalysisResultAndEvictCache(request.getIdRequest(), result);
             } else {
                 throw new RuntimeException("Gemini API error: " + response.getStatusCode());
             }
@@ -143,7 +149,7 @@ public class GeminiService {
     }
     
     /**
-     * Validasi data lead sebelum analisa
+     * Validate data lead before sending to Gemini
      */
     private void validateLeadData(LeadScoringRequest request) {
         if (request.getIdRequest() == null) {
@@ -155,7 +161,7 @@ public class GeminiService {
     }
     
     /**
-     * Build prompt untuk analisa lead (SHORTENED VERSION)
+     * Build prompt for analyze lead (SHORTENED VERSION)
      */
     private String buildAnalysisPrompt(LeadScoringRequest request) {
         StringBuilder prompt = new StringBuilder();
@@ -175,32 +181,33 @@ public class GeminiService {
         prompt.append("WARM: Budget 20-50jt, Timeline 1-3 bulan\n");
         prompt.append("COLD: Budget <20jt/tidak tahu, Timeline fleksibel, Email personal\n\n");
         
-        prompt.append("OUTPUT (JSON only, no markdown):\n");
+        prompt.append("OUTPUT (MUST BE VALID JSON, NO MARKDOWN):\n");
         prompt.append("{\n");
         prompt.append("  \"skorPrioritas\": \"HOT/WARM/COLD\",\n");
         prompt.append("  \"kategori\": \"tipe bisnis\",\n");
         prompt.append("  \"alasan\": \"penjelasan singkat\",\n");
         prompt.append("  \"confidence\": 85,\n");
-        prompt.append("  \"rekomendasi\": \"action items\"\n");
+        prompt.append("  \"rekomendasi\": \"action items dalam SATU STRING, bukan array\"\n");
         prompt.append("}\n");
+        prompt.append("IMPORTANT: rekomendasi harus string, bukan array!\n");
         
         return prompt.toString();
     }
     
     /**
-     * Helper untuk handle null values
+     * Helper for handle null values
      */
     private String orDefault(String value, String defaultValue) {
         return (value != null && !value.trim().isEmpty()) ? value : defaultValue;
     }
     
     /**
-     * Parse response dari Gemini API
+     * Parse response from Gemini API
      */
     private LeadScoringResponse parseGeminiResponse(String responseBody) throws Exception {
         JsonNode root = objectMapper.readTree(responseBody);
         
-        // Extract text dari response
+        // Extract text from response
         JsonNode candidates = root.path("candidates");
         if (candidates.isEmpty()) {
             throw new RuntimeException("No candidates in Gemini response");
@@ -232,14 +239,13 @@ public class GeminiService {
             .replace("```", "")
             .trim();
         
-        // Handle jika response masih ada text di luar JSON
+        // Handle if JSON is wrapped in text
         int jsonStart = cleanJson.indexOf("{");
         int jsonEnd = cleanJson.lastIndexOf("}");
         
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
             cleanJson = cleanJson.substring(jsonStart, jsonEnd + 1);
         } else {
-            // JSON tidak lengkap, coba repair
             System.out.println("=== WARNING: Incomplete JSON, attempting repair ===");
             cleanJson = repairIncompleteJson(cleanJson);
         }
@@ -248,26 +254,56 @@ public class GeminiService {
         System.out.println(cleanJson);
         System.out.println("====================");
         
-        // Parse ke LeadScoringResponse
+        // Parse to LeadScoringResponse include handle array rekomendasi
         LeadScoringResponse response;
         try {
-            response = objectMapper.readValue(cleanJson, LeadScoringResponse.class);
+            // Parse to JsonNode fist for flexible handling
+            JsonNode jsonNode = objectMapper.readTree(cleanJson);
+            
+            response = new LeadScoringResponse();
+            response.setSkorPrioritas(jsonNode.get("skorPrioritas").asText());
+            response.setKategori(jsonNode.get("kategori").asText());
+            response.setAlasan(jsonNode.get("alasan").asText());
+            response.setConfidence(jsonNode.get("confidence").asInt());
+            
+            // Handle rekomendasi - input can be string or array
+            JsonNode rekomendasiNode = jsonNode.get("rekomendasi");
+            if (rekomendasiNode != null) {
+                if (rekomendasiNode.isArray()) {
+                    // Convert array to string
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < rekomendasiNode.size(); i++) {
+                        sb.append(rekomendasiNode.get(i).asText());
+                        if (i < rekomendasiNode.size() - 1) {
+                            sb.append("; ");
+                        }
+                    }
+                    response.setRekomendasi(sb.toString());
+                } else {
+                    response.setRekomendasi(rekomendasiNode.asText());
+                }
+            } else {
+                response.setRekomendasi("Follow up sesuai prioritas lead");
+            }
+            
         } catch (Exception e) {
             System.out.println("=== PARSE ERROR: " + e.getMessage() + " ===");
+            e.printStackTrace();
+            
             // If MAX_TOKENS, try to repair and parse again
             if ("MAX_TOKENS".equals(finishReason)) {
                 cleanJson = repairIncompleteJson(aiText);
-                response = objectMapper.readValue(cleanJson, LeadScoringResponse.class);
+                return parseGeminiResponse(responseBody); // Recursive retry
             } else {
                 throw e;
             }
         }
         
-        // Validasi response
+        // Validate response
         if (response.getSkorPrioritas() == null || 
             (!response.getSkorPrioritas().equals("HOT") && 
-             !response.getSkorPrioritas().equals("WARM") && 
-             !response.getSkorPrioritas().equals("COLD"))) {
+            !response.getSkorPrioritas().equals("WARM") && 
+            !response.getSkorPrioritas().equals("COLD"))) {
             throw new RuntimeException("Invalid skorPrioritas: " + response.getSkorPrioritas());
         }
         
@@ -320,9 +356,10 @@ public class GeminiService {
     }
     
     /**
-     * Simpan hasil analisa ke database
+     * Save analysis result to database & evict related caches
      */
-    private void saveAnalysisResult(Integer idRequest, LeadScoringResponse result) {
+    @CacheEvict(value = {"leadScoring", "leadStatistics"}, allEntries = true)
+    private void saveAnalysisResultAndEvictCache(Integer idRequest, LeadScoringResponse result) {
         RequestLayanan request = requestLayananRepository.findById(idRequest)
             .orElseThrow(() -> new RuntimeException("Request tidak ditemukan"));
         
@@ -333,17 +370,23 @@ public class GeminiService {
         request.setAiAnalyzed(true);
         
         requestLayananRepository.save(request);
+        
+        System.out.println("=== CACHE EVICTED: leadScoring & leadStatistics after saving analysis ===");
     }
     
     /**
-     * Analisis ulang lead (untuk refresh scoring)
-     * Digunakan oleh LeadScoringController
+     * Re-analyze lead (for refresh scoring)
+     * Used by LeadScoringController
+     * Cache evicted on re-analyze
      */
+    @CacheEvict(value = "leadScoring", key = "'analysis_' + #idRequest")
     public LeadScoringResponse reAnalyzeLead(Integer idRequest) {
+        System.out.println("=== CACHE EVICTED: Re-analyzing lead " + idRequest + " ===");
+        
         RequestLayanan request = requestLayananRepository.findById(idRequest)
             .orElseThrow(() -> new RuntimeException("Request dengan ID " + idRequest + " tidak ditemukan"));
         
-        // Build LeadScoringRequest dengan data lengkap
+        // Build LeadScoringRequest with all data
         LeadScoringRequest scoringRequest = new LeadScoringRequest();
         scoringRequest.setIdRequest(idRequest);
         scoringRequest.setNamaKlien(request.getKlien().getNamaKlien());
