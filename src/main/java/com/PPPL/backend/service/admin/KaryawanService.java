@@ -1,26 +1,32 @@
 package com.PPPL.backend.service.admin;
 
 import com.PPPL.backend.data.admin.KaryawanDTO;
+import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.model.admin.Karyawan;
 import com.PPPL.backend.model.admin.Manager;
 import com.PPPL.backend.repository.admin.KaryawanRepository;
 import com.PPPL.backend.repository.admin.ManagerRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class KaryawanService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(KaryawanService.class);
+
     @Autowired
     private KaryawanRepository karyawanRepository;
-    
+
     @Autowired
     private ManagerRepository managerRepository;
-    
+
     /**
      * Get all karyawan
      */
@@ -30,148 +36,171 @@ public class KaryawanService {
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
+
     /**
      * Get karyawan by ID
      */
     public KaryawanDTO getKaryawanById(Integer id) {
         Karyawan karyawan = karyawanRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Karyawan dengan ID " + id + " tidak ditemukan"));
-        
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Karyawan dengan ID " + id + " tidak ditemukan"
+            ));
+
         return convertToDTO(karyawan);
     }
-    
+
     /**
      * Create new karyawan
      */
+    @Transactional
     public KaryawanDTO createKaryawan(KaryawanDTO dto) {
-        // Validasi
-        if (dto.getNamaKaryawan() == null || dto.getNamaKaryawan().trim().isEmpty()) {
-            throw new RuntimeException("Nama karyawan wajib diisi");
-        }
-        
-        if (dto.getEmailKaryawan() == null || dto.getEmailKaryawan().trim().isEmpty()) {
-            throw new RuntimeException("Email wajib diisi");
-        }
-        
-        if (dto.getIdManager() == null) {
-            throw new RuntimeException("Manager wajib dipilih");
-        }
-        
         // Check duplicate email
         if (karyawanRepository.existsByEmailKaryawan(dto.getEmailKaryawan())) {
-            throw new RuntimeException("Email sudah terdaftar");
+            throw new IllegalArgumentException(
+                "Email '" + dto.getEmailKaryawan() + "' sudah terdaftar"
+            );
         }
-        
-        // Get manager
+
+        // Validate if manager exists
         Manager manager = managerRepository.findById(dto.getIdManager())
-            .orElseThrow(() -> new RuntimeException("Manager tidak ditemukan"));
-        
-        // Create entity
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Manager dengan ID " + dto.getIdManager() + " tidak ditemukan"
+            ));
+
+        // Make entity
         Karyawan karyawan = new Karyawan();
-        karyawan.setNamaKaryawan(dto.getNamaKaryawan());
-        karyawan.setEmailKaryawan(dto.getEmailKaryawan());
+        karyawan.setNamaKaryawan(dto.getNamaKaryawan().trim());
+        karyawan.setEmailKaryawan(dto.getEmailKaryawan().trim().toLowerCase());
         karyawan.setNoTelp(dto.getNoTelp());
-        karyawan.setJabatanPosisi(dto.getJabatanPosisi());
+        karyawan.setJabatanPosisi(dto.getJabatanPosisi().trim());
         karyawan.setManager(manager);
         karyawan.setFotoProfil(dto.getFotoProfil());
-        
+
         Karyawan saved = karyawanRepository.save(karyawan);
-        
-        System.out.println("Karyawan created with foto: " + (saved.getFotoProfil() != null ? "YES" : "NO"));
-        
+
+        log.info("Karyawan created: id={}, nama={}, manager={}",
+            saved.getIdKaryawan(), saved.getNamaKaryawan(), manager.getNamaManager());
+
         return convertToDTO(saved);
     }
-    
+
     /**
      * Update karyawan
      */
+    @Transactional
     public KaryawanDTO updateKaryawan(Integer id, KaryawanDTO dto) {
+        // Search karyawan wants to be updated
         Karyawan karyawan = karyawanRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Karyawan dengan ID " + id + " tidak ditemukan"));
-        
-        // Check duplicate email (exclude current)
-        if (!karyawan.getEmailKaryawan().equals(dto.getEmailKaryawan()) && 
-            karyawanRepository.existsByEmailKaryawan(dto.getEmailKaryawan())) {
-            throw new RuntimeException("Email sudah terdaftar");
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Karyawan dengan ID " + id + " tidak ditemukan"
+            ));
+
+        // Check duplicate email if only changed
+        String emailBaru = dto.getEmailKaryawan().trim().toLowerCase();
+        String emailLama = karyawan.getEmailKaryawan();
+
+        if (!emailLama.equals(emailBaru) &&
+            karyawanRepository.existsByEmailKaryawan(emailBaru)) {
+            throw new IllegalArgumentException(
+                "Email '" + emailBaru + "' sudah digunakan karyawan lain"
+            );
         }
-        
-        // Get manager
+
+        // Validate if manager exists
         Manager manager = managerRepository.findById(dto.getIdManager())
-            .orElseThrow(() -> new RuntimeException("Manager tidak ditemukan"));
-        
-        // Update fields
-        karyawan.setNamaKaryawan(dto.getNamaKaryawan());
-        karyawan.setEmailKaryawan(dto.getEmailKaryawan());
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Manager dengan ID " + dto.getIdManager() + " tidak ditemukan"
+            ));
+
+        // Update field
+        karyawan.setNamaKaryawan(dto.getNamaKaryawan().trim());
+        karyawan.setEmailKaryawan(emailBaru);
         karyawan.setNoTelp(dto.getNoTelp());
-        karyawan.setJabatanPosisi(dto.getJabatanPosisi());
+        karyawan.setJabatanPosisi(dto.getJabatanPosisi().trim());
         karyawan.setManager(manager);
-        
-        // Update foto profil (only if provided)
-        if (dto.getFotoProfil() != null) {
+
+        // Update foto only if provided
+        if (dto.getFotoProfil() != null && !dto.getFotoProfil().isBlank()) {
             karyawan.setFotoProfil(dto.getFotoProfil());
         }
-        
+
         Karyawan updated = karyawanRepository.save(karyawan);
-        
-        System.out.println("Karyawan updated with foto: " + (updated.getFotoProfil() != null ? "YES" : "NO"));
-        
+
+        log.info("Karyawan updated: id={}, nama={}, manager={}",
+            updated.getIdKaryawan(), updated.getNamaKaryawan(), manager.getNamaManager());
+
         return convertToDTO(updated);
     }
-    
+
     /**
      * Delete karyawan
      */
+    @Transactional
     public void deleteKaryawan(Integer id) {
         if (!karyawanRepository.existsById(id)) {
-            throw new RuntimeException("Karyawan dengan ID " + id + " tidak ditemukan");
+            throw new ResourceNotFoundException(
+                "Karyawan dengan ID " + id + " tidak ditemukan"
+            );
         }
-        
+
         karyawanRepository.deleteById(id);
+        log.info("Karyawan deleted: id={}", id);
     }
-    
+
     /**
-     * Search karyawan
+     * Search karyawan by keyword dan/atau manager
      */
     public List<KaryawanDTO> searchKaryawan(String keyword, Integer idManager) {
+        // Validasi idManager jika diberikan
+        if (idManager != null && !managerRepository.existsById(idManager)) {
+            throw new ResourceNotFoundException(
+                "Manager dengan ID " + idManager + " tidak ditemukan"
+            );
+        }
+
         List<Karyawan> karyawan = karyawanRepository.findAll();
-        
-        // Filter by keyword
+
         if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = keyword.toLowerCase();
+            String kw = keyword.trim().toLowerCase();
             karyawan = karyawan.stream()
-                .filter(k -> k.getNamaKaryawan().toLowerCase().contains(kw) ||
-                           k.getEmailKaryawan().toLowerCase().contains(kw) ||
-                           k.getJabatanPosisi().toLowerCase().contains(kw))
+                .filter(k ->
+                    k.getNamaKaryawan().toLowerCase().contains(kw) ||
+                    k.getEmailKaryawan().toLowerCase().contains(kw) ||
+                    k.getJabatanPosisi().toLowerCase().contains(kw)
+                )
                 .collect(Collectors.toList());
         }
-        
-        // Filter by manager
+
         if (idManager != null) {
             karyawan = karyawan.stream()
                 .filter(k -> k.getManager().getIdManager().equals(idManager))
                 .collect(Collectors.toList());
         }
-        
+
         return karyawan.stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
+
     /**
      * Get karyawan by manager
      */
     public List<KaryawanDTO> getKaryawanByManager(Integer idManager) {
+        if (!managerRepository.existsById(idManager)) {
+            throw new ResourceNotFoundException(
+                "Manager dengan ID " + idManager + " tidak ditemukan"
+            );
+        }
+
         return karyawanRepository.findAll()
             .stream()
             .filter(k -> k.getManager().getIdManager().equals(idManager))
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
-    // Helper methods
+
     /**
-     * Convert to DTO
+     * Convert Karyawan entity to DTO
      */
     private KaryawanDTO convertToDTO(Karyawan karyawan) {
         KaryawanDTO dto = new KaryawanDTO();

@@ -1,147 +1,138 @@
 package com.PPPL.backend.service.admin;
 
 import com.PPPL.backend.data.layanan.LayananDTO;
+import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.model.enums.KategoriLayanan;
 import com.PPPL.backend.model.layanan.Layanan;
 import com.PPPL.backend.repository.layanan.LayananRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class LayananService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(LayananService.class);
+
     @Autowired
     private LayananRepository layananRepository;
-    
-    /**
-     * Get all layanan
-     */
+
     public List<LayananDTO> getAllLayanan() {
         return layananRepository.findAll()
             .stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
+
     /**
-     * Get layanan by ID
+     * Method to get layanan by ID
      */
     public LayananDTO getLayananById(Integer id) {
         Layanan layanan = layananRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-        
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Layanan dengan ID " + id + " tidak ditemukan"));
         return convertToDTO(layanan);
     }
-    
+
     /**
-     * Create new layanan
+     * Method to create new layanan data
      */
+    @Transactional
     public LayananDTO createLayanan(LayananDTO dto) {
-        // Validasi
-        if (dto.getNamaLayanan() == null || dto.getNamaLayanan().trim().isEmpty()) {
-            throw new RuntimeException("Nama layanan wajib diisi");
-        }
-        
-        if (dto.getKategori() == null) {
-            throw new RuntimeException("Kategori wajib dipilih");
-        }
-        
-        // Check duplicate name
         List<Layanan> existing = layananRepository
-                .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
+            .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
 
         if (!existing.isEmpty()) {
-            throw new RuntimeException("Nama layanan sudah terdaftar");
+            throw new IllegalArgumentException(
+                "Nama layanan '" + dto.getNamaLayanan() + "' sudah terdaftar");
         }
-        
-        // Create entity
+
         Layanan layanan = new Layanan();
-        layanan.setNamaLayanan(dto.getNamaLayanan());
+        layanan.setNamaLayanan(dto.getNamaLayanan().trim());
         layanan.setKategori(dto.getKategori());
         layanan.setCatatan(dto.getCatatan());
-        
+
         Layanan saved = layananRepository.save(layanan);
-        
+        log.info("Layanan created: id={}, nama={}", saved.getIdLayanan(), saved.getNamaLayanan());
+
         return convertToDTO(saved);
     }
-    
+
     /**
-     * Update layanan
+     * Method to update layanan data
      */
+    @Transactional
     public LayananDTO updateLayanan(Integer id, LayananDTO dto) {
         Layanan layanan = layananRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-        
-        // Check duplicate name (exclude current)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Layanan dengan ID " + id + " tidak ditemukan"));
+
         List<Layanan> existingList = layananRepository
-                .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
+            .findByNamaLayananContainingIgnoreCase(dto.getNamaLayanan());
 
         for (Layanan existing : existingList) {
             if (!existing.getIdLayanan().equals(id)) {
-                throw new RuntimeException("Nama layanan sudah terdaftar");
+                throw new IllegalArgumentException(
+                    "Nama layanan '" + dto.getNamaLayanan() + "' sudah terdaftar");
             }
         }
-        
-        // Update fields
-        layanan.setNamaLayanan(dto.getNamaLayanan());
+
+        layanan.setNamaLayanan(dto.getNamaLayanan().trim());
         layanan.setKategori(dto.getKategori());
         layanan.setCatatan(dto.getCatatan());
-        
+
         Layanan updated = layananRepository.save(layanan);
-        
+        log.info("Layanan updated: id={}, nama={}", updated.getIdLayanan(), updated.getNamaLayanan());
+
         return convertToDTO(updated);
     }
-    
+
     /**
-     * Delete layanan
+     * Method to delete layanan by ID
      */
+    @Transactional
     public void deleteLayanan(Integer id) {
         Layanan layanan = layananRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Layanan dengan ID " + id + " tidak ditemukan"));
-        
-        // Check if layanan has requests
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Layanan dengan ID " + id + " tidak ditemukan"));
+
         if (!layanan.getRequestLayananSet().isEmpty()) {
-            throw new RuntimeException(
-                "Layanan tidak dapat dihapus karena masih memiliki " + 
-                layanan.getRequestLayananSet().size() + " request");
+            throw new IllegalStateException(
+                "Layanan tidak dapat dihapus karena masih memiliki " +
+                layanan.getRequestLayananSet().size() + " request aktif");
         }
-        
+
         layananRepository.delete(layanan);
+        log.info("Layanan deleted: id={}", id);
     }
-    
-    /**
-     * Search layanan
-     */
+
     public List<LayananDTO> searchLayanan(String keyword, KategoriLayanan kategori) {
         List<Layanan> layanan = layananRepository.findAll();
-        
-        // Filter by keyword
+
         if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = keyword.toLowerCase();
+            String kw = keyword.trim().toLowerCase();
             layanan = layanan.stream()
                 .filter(l -> l.getNamaLayanan().toLowerCase().contains(kw))
                 .collect(Collectors.toList());
         }
-        
-        // Filter by kategori
+
         if (kategori != null) {
             layanan = layanan.stream()
                 .filter(l -> l.getKategori() == kategori)
                 .collect(Collectors.toList());
         }
-        
+
         return layanan.stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
-    /**
-     * Get layanan by kategori
-     */
+
     public List<LayananDTO> getLayananByKategori(KategoriLayanan kategori) {
         return layananRepository.findAll()
             .stream()
@@ -149,8 +140,7 @@ public class LayananService {
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
-    // Helper methods
+
     private LayananDTO convertToDTO(Layanan layanan) {
         LayananDTO dto = new LayananDTO();
         dto.setIdLayanan(layanan.getIdLayanan());

@@ -1,6 +1,7 @@
 package com.PPPL.backend.service.admin;
 
 import com.PPPL.backend.data.admin.ManagerDTO;
+import com.PPPL.backend.handler.ResourceNotFoundException;
 import com.PPPL.backend.model.admin.Admin;
 import com.PPPL.backend.model.admin.Manager;
 import com.PPPL.backend.model.layanan.Layanan;
@@ -8,10 +9,11 @@ import com.PPPL.backend.repository.admin.AdminRepository;
 import com.PPPL.backend.repository.admin.ManagerRepository;
 import com.PPPL.backend.repository.layanan.LayananRepository;
 
-import jakarta.transaction.Transactional;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +21,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ManagerService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(ManagerService.class);
+
     @Autowired
     private ManagerRepository managerRepository;
 
@@ -28,151 +32,134 @@ public class ManagerService {
 
     @Autowired
     private AdminRepository adminRepository;
-    
-    /**
-     * Get all managers
-     */
+
     public List<ManagerDTO> getAllManagers() {
         return managerRepository.findAll()
             .stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
+
     /**
-     * Get manager by ID
+     * Method to get manager by ID
      */
     public ManagerDTO getManagerById(Integer id) {
         Manager manager = managerRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Manager dengan ID " + id + " tidak ditemukan"));
-        
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Manager dengan ID " + id + " tidak ditemukan"));
         return convertToDTO(manager);
     }
-    
+
     /**
-     * Create new manager
+     * Method to create new manager data
      */
+    @Transactional
     public ManagerDTO createManager(ManagerDTO dto) {
-        // Validasi
-        if (dto.getNamaManager() == null || dto.getNamaManager().trim().isEmpty()) {
-            throw new RuntimeException("Nama manager wajib diisi");
-        }
-        
-        if (dto.getEmailManager() == null || dto.getEmailManager().trim().isEmpty()) {
-            throw new RuntimeException("Email wajib diisi");
-        }
-        
-        // Check duplicate email
         if (managerRepository.existsByEmailManager(dto.getEmailManager())) {
-            throw new RuntimeException("Email sudah terdaftar");
+            throw new IllegalArgumentException(
+                "Email '" + dto.getEmailManager() + "' sudah terdaftar");
         }
-        
-        // Create entity
+
         Manager manager = new Manager();
-        manager.setNamaManager(dto.getNamaManager());
-        manager.setEmailManager(dto.getEmailManager());
+        manager.setNamaManager(dto.getNamaManager().trim());
+        manager.setEmailManager(dto.getEmailManager().trim().toLowerCase());
         manager.setNoTelp(dto.getNoTelp());
         manager.setDivisi(dto.getDivisi());
         manager.setTglMulai(dto.getTglMulai());
-        
+
         Manager saved = managerRepository.save(manager);
-        
+        log.info("Manager created: id={}, email={}", saved.getIdManager(), saved.getEmailManager());
+
         return convertToDTO(saved);
     }
-    
+
     /**
-     * Update manager
+     * Method to update manager data
      */
+    @Transactional
     public ManagerDTO updateManager(Integer id, ManagerDTO dto) {
         Manager manager = managerRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Manager dengan ID " + id + " tidak ditemukan"));
-        
-        // Check duplicate email (exclude current)
-        if (!manager.getEmailManager().equals(dto.getEmailManager()) && 
-            managerRepository.existsByEmailManager(dto.getEmailManager())) {
-            throw new RuntimeException("Email sudah terdaftar");
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Manager dengan ID " + id + " tidak ditemukan"));
+
+        String emailBaru = dto.getEmailManager().trim().toLowerCase();
+        if (!manager.getEmailManager().equals(emailBaru) &&
+            managerRepository.existsByEmailManager(emailBaru)) {
+            throw new IllegalArgumentException(
+                "Email '" + emailBaru + "' sudah digunakan manager lain");
         }
-        
-        // Update fields
-        manager.setNamaManager(dto.getNamaManager());
-        manager.setEmailManager(dto.getEmailManager());
+
+        manager.setNamaManager(dto.getNamaManager().trim());
+        manager.setEmailManager(emailBaru);
         manager.setNoTelp(dto.getNoTelp());
         manager.setDivisi(dto.getDivisi());
         manager.setTglMulai(dto.getTglMulai());
-        
+
         Manager updated = managerRepository.save(manager);
-        
+        log.info("Manager updated: id={}", updated.getIdManager());
+
         return convertToDTO(updated);
     }
-    
+
     /**
-     * Delete manager - HARD DELETE from both table (Manager & Admin)
+     * Method to to hard delete manager by ID
      */
     @Transactional
     public void deleteManager(Integer id) {
         Manager manager = managerRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Manager dengan ID " + id + " tidak ditemukan"));
-        
-        String emailManager = manager.getEmailManager();
-        
-        // Check if manager has employees
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Manager dengan ID " + id + " tidak ditemukan"));
+
         if (!manager.getKaryawanSet().isEmpty()) {
-            throw new RuntimeException(
-                "Manager tidak dapat dihapus karena masih memiliki " + 
-                manager.getKaryawanSet().size() + " karyawan. Hapus atau pindahkan karyawan terlebih dahulu.");
+            throw new IllegalStateException(
+                "Manager tidak dapat dihapus karena masih memiliki " +
+                manager.getKaryawanSet().size() +
+                " karyawan. Hapus atau pindahkan karyawan terlebih dahulu.");
         }
-        
-        // Check if manager has clients
+
         if (!manager.getKlienSet().isEmpty()) {
-            throw new RuntimeException(
-                "Manager tidak dapat dihapus karena masih menangani " + 
-                manager.getKlienSet().size() + " klien. Hapus atau pindahkan klien terlebih dahulu.");
+            throw new IllegalStateException(
+                "Manager tidak dapat dihapus karena masih menangani " +
+                manager.getKlienSet().size() +
+                " klien. Hapus atau pindahkan klien terlebih dahulu.");
         }
-        
-        // 1. Delete from table Manager
+
+        String emailManager = manager.getEmailManager();
         managerRepository.delete(manager);
-        
-        // 2. Delete from table Admin based on email
+
         Optional<Admin> adminOpt = adminRepository.findByEmail(emailManager);
         if (adminOpt.isPresent()) {
-            Admin admin = adminOpt.get();
-            adminRepository.delete(admin);
-            System.out.println("Admin dengan email " + emailManager + " berhasil dihapus");
+            adminRepository.delete(adminOpt.get());
+            log.info("Admin terkait dihapus: email={}", emailManager);
         } else {
-            System.out.println("Admin dengan email " + emailManager + " tidak ditemukan");
+            log.warn("Admin terkait tidak ditemukan: email={}", emailManager);
         }
+
+        log.info("Manager deleted: id={}", id);
     }
-    
-    /**
-     * Search managers by name or divisi
-     */
+
     public List<ManagerDTO> searchManagers(String keyword, String divisi) {
         List<Manager> managers = managerRepository.findAll();
-        
-        // Filter by keyword (name or email)
+
         if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = keyword.toLowerCase();
+            String kw = keyword.trim().toLowerCase();
             managers = managers.stream()
                 .filter(m -> m.getNamaManager().toLowerCase().contains(kw) ||
-                           m.getEmailManager().toLowerCase().contains(kw))
+                    m.getEmailManager().toLowerCase().contains(kw))
                 .collect(Collectors.toList());
         }
-        
-        // Filter by divisi
+
         if (divisi != null && !divisi.trim().isEmpty()) {
             managers = managers.stream()
                 .filter(m -> divisi.equalsIgnoreCase(m.getDivisi()))
                 .collect(Collectors.toList());
         }
-        
+
         return managers.stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
-    
-    /**
-     * Get unique divisi list
-     */
+
     public List<String> getDivisiList() {
         return managerRepository.findAll()
             .stream()
@@ -183,9 +170,6 @@ public class ManagerService {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Get divisi list from nama layanan
-     */
     public List<String> getDivisiFromLayanan() {
         return layananRepository.findAll()
             .stream()
@@ -194,8 +178,7 @@ public class ManagerService {
             .sorted()
             .collect(Collectors.toList());
     }
-    
-    // Helper methods
+
     private ManagerDTO convertToDTO(Manager manager) {
         ManagerDTO dto = new ManagerDTO();
         dto.setIdManager(manager.getIdManager());

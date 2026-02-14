@@ -9,6 +9,8 @@ import com.PPPL.backend.repository.admin.AdminRepository;
 import com.PPPL.backend.repository.admin.ManagerRepository;
 import com.PPPL.backend.service.email.EmailService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,66 +22,56 @@ import java.util.Date;
 
 @Service
 public class AdminService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(AdminService.class);
+
     @Autowired
     private AdminRepository adminRepository;
-    
+
     @Autowired
     private ManagerRepository managerRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private EmailService emailService;
-    
+
     @Value("${app.frontend.url}")
     private String frontendUrl;
-    
+
     private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
     private static final String DIGITS = "0123456789";
     private static final SecureRandom random = new SecureRandom();
-    
+
     /**
-     * Register manager baru dengan auto-generated password, email notification dan otomatis tambahkan ke tabel Manager
+     * Register new manager
      */
     @Transactional
     public AdminDTO registerManager(RegisterManagerRequest request) {
-        // Validate email
+        // Check duplicate email in Admin table
         if (adminRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email sudah digunakan");
+            throw new IllegalArgumentException("Email sudah digunakan");
         }
-        
-        // Validate email di tabel Manager juga
+
+        // Check duplicate email in Manager table
         if (managerRepository.existsByEmailManager(request.getEmail())) {
-            throw new RuntimeException("Email sudah terdaftar sebagai manager");
+            throw new IllegalArgumentException("Email sudah terdaftar sebagai manager");
         }
-        
-        // Validate required fields
-        if (request.getNoTelp() == null || request.getNoTelp().trim().isEmpty()) {
-            throw new RuntimeException("No. Telepon wajib diisi");
-        }
-        
-        if (request.getDivisi() == null || request.getDivisi().trim().isEmpty()) {
-            throw new RuntimeException("Divisi wajib diisi");
-        }
-        
-        // Generate username dari email
-        String username = generateUsernameFromEmail(request.getEmail());
-        
-        // Pastikan username unik
-        String finalUsername = username;
+
+        // Generate username from email
+        String baseUsername = generateUsernameFromEmail(request.getEmail());
+        String finalUsername = baseUsername;
         int counter = 1;
         while (adminRepository.existsByUsername(finalUsername)) {
-            finalUsername = username + counter;
+            finalUsername = baseUsername + counter;
             counter++;
         }
-        
-        // Generate random password
+
         String temporaryPassword = generateRandomPassword();
-        
-        // 1. Create new Admin (untuk login)
+
+        // Create new manager account for login
         Admin admin = new Admin();
         admin.setUsername(finalUsername);
         admin.setPassword(passwordEncoder.encode(temporaryPassword));
@@ -88,64 +80,49 @@ public class AdminService {
         admin.setRole(AdminRole.MANAGER);
         admin.setIsActive(true);
         admin.setIsFirstLogin(true);
-        
+
         Admin savedAdmin = adminRepository.save(admin);
-        
-        // 2. Create new Manager (untuk data manager)
+
+        // Create corresponding Manager record
         Manager manager = new Manager();
         manager.setNamaManager(request.getNamaLengkap());
         manager.setEmailManager(request.getEmail());
         manager.setNoTelp(request.getNoTelp());
         manager.setDivisi(request.getDivisi());
-        manager.setTglMulai(new Date()); // Set tanggal mulai = hari ini
-        
+        manager.setTglMulai(new Date());
+
         managerRepository.save(manager);
-        
-        // 3. Send email with credentials
+
+        // Send email with credentials
         sendWelcomeEmail(savedAdmin, temporaryPassword);
-        
+
+        log.info("Manager registered: username={}, email={}", finalUsername, request.getEmail());
+
         return mapToDTO(savedAdmin);
     }
-    
-    /**
-     * Generate username dari email
-     */
+
+    // Private helper methods
     private String generateUsernameFromEmail(String email) {
         return email.split("@")[0].toLowerCase().replaceAll("[^a-z0-9]", "");
     }
-    
-    /**
-     * Generate random password dengan requirement:
-     * - Minimal 8 karakter
-     * - Minimal 1 uppercase
-     * - Minimal 1 lowercase  
-     * - Minimal 1 digit
-     * - Minimal 1 special character
-     */
+
     private String generateRandomPassword() {
         String SAFE_SPECIAL = "!@#$%^&*()_+-=[]{}|:<>?";
         String ALL_SAFE_CHARS = UPPERCASE + LOWERCASE + DIGITS + SAFE_SPECIAL;
-        
+
         StringBuilder password = new StringBuilder(12);
-        
-        // Ensure at least one of each required character type
         password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
         password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
         password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
         password.append(SAFE_SPECIAL.charAt(random.nextInt(SAFE_SPECIAL.length())));
-        
-        // Fill remaining 8 characters randomly (total 12)
+
         for (int i = 4; i < 12; i++) {
             password.append(ALL_SAFE_CHARS.charAt(random.nextInt(ALL_SAFE_CHARS.length())));
         }
-        
-        // Shuffle the password
+
         return shuffleString(password.toString());
     }
 
-    /**
-     * Shuffle string untuk randomize password
-     */
     private String shuffleString(String input) {
         char[] characters = input.toCharArray();
         for (int i = characters.length - 1; i > 0; i--) {
@@ -156,13 +133,10 @@ public class AdminService {
         }
         return new String(characters);
     }
-    
-    /**
-     * Send welcome email dengan credentials
-     */
+
     private void sendWelcomeEmail(Admin manager, String temporaryPassword) {
         String subject = "Akun Manager Anda - PT. Pandawa Digital Mandiri";
-        
+
         String htmlContent = String.format("""
             <!DOCTYPE html>
             <html>
@@ -304,17 +278,15 @@ public class AdminService {
             manager.getEmail(),
             frontendUrl
         );
-        
+
         try {
             emailService.sendEmail(manager.getEmail(), subject, htmlContent);
         } catch (Exception e) {
-            throw new RuntimeException("Gagal mengirim email: " + e.getMessage());
+            log.error("Gagal kirim welcome email: email={}", manager.getEmail(), e);
+            throw new RuntimeException("Gagal mengirim email kredensial ke " + manager.getEmail());
         }
     }
-    
-    /**
-     * Map to DTO
-     */
+
     private AdminDTO mapToDTO(Admin admin) {
         AdminDTO dto = new AdminDTO();
         dto.setIdAdmin(admin.getIdAdmin());

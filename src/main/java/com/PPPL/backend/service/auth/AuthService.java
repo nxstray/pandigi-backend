@@ -9,6 +9,8 @@ import com.PPPL.backend.repository.admin.AdminRepository;
 import com.PPPL.backend.security.JwtUtil;
 import com.PPPL.backend.service.email.EmailService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,17 +19,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     @Autowired
     private AdminRepository adminRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -36,32 +41,34 @@ public class AuthService {
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
-    
+
     /**
-     * Login admin - UPDATED to include isFirstLogin
+     * Login admin
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
         Admin admin = adminRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new RuntimeException("Username atau password salah"));
-        
+
         if (!admin.getIsActive()) {
             throw new RuntimeException("Akun Anda telah dinonaktifkan. Hubungi super admin.");
         }
-        
+
         if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
             throw new RuntimeException("Username atau password salah");
         }
-        
+
         admin.setLastLogin(new Date());
         adminRepository.save(admin);
-        
+
+        log.info("Login berhasil: username={}, role={}", admin.getUsername(), admin.getRole());
+
         String token = jwtUtil.generateToken(
-            admin.getUsername(), 
-            admin.getIdAdmin(), 
+            admin.getUsername(),
+            admin.getIdAdmin(),
             admin.getRole().name()
         );
-        
+
         return new LoginResponse(
             token,
             admin.getIdAdmin(),
@@ -73,9 +80,9 @@ public class AuthService {
             admin.getIsFirstLogin()
         );
     }
-    
+
     /**
-     * Update foto profil
+     * Update foto profil admin
      */
     @Transactional
     public void updateFotoProfil(Integer idAdmin, String fotoProfil) {
@@ -83,57 +90,57 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
         admin.setFotoProfil(fotoProfil);
         adminRepository.save(admin);
+        log.info("Foto profil updated: idAdmin={}", idAdmin);
     }
-    
+
     /**
-     * Change password - UPDATED to reset isFirstLogin flag
+     * Change password
      */
     @Transactional
     public void changePassword(Integer idAdmin, String oldPassword, String newPassword) {
         Admin admin = adminRepository.findById(idAdmin)
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
-        
-        // Verify old password only if NOT first login
+
+        // VVerify old password only if not first login
         if (!admin.getIsFirstLogin()) {
             if (!passwordEncoder.matches(oldPassword, admin.getPassword())) {
-                throw new RuntimeException("Password lama tidak sesuai");
+                throw new IllegalArgumentException("Password lama tidak sesuai");
             }
         }
-        
+
         // Validate new password strength
         validatePasswordStrength(newPassword);
-        
-        // Update password and reset first login flag
+
         admin.setPassword(passwordEncoder.encode(newPassword));
         admin.setIsFirstLogin(false);
         adminRepository.save(admin);
+
+        log.info("Password changed: idAdmin={}", idAdmin);
     }
-    
+
     /**
      * Validate password strength
      */
     private void validatePasswordStrength(String password) {
-        if (password.length() < 8) {
-            throw new RuntimeException("Password minimal 8 karakter");
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("Password minimal 8 karakter");
         }
-        
         if (!password.matches(".*[A-Z].*")) {
-            throw new RuntimeException("Password harus mengandung minimal 1 huruf besar");
+            throw new IllegalArgumentException("Password harus mengandung minimal 1 huruf besar");
         }
-        
         if (!password.matches(".*[a-z].*")) {
-            throw new RuntimeException("Password harus mengandung minimal 1 huruf kecil");
+            throw new IllegalArgumentException("Password harus mengandung minimal 1 huruf kecil");
         }
-        
         if (!password.matches(".*\\d.*")) {
-            throw new RuntimeException("Password harus mengandung minimal 1 angka");
+            throw new IllegalArgumentException("Password harus mengandung minimal 1 angka");
         }
-        
         if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
-            throw new RuntimeException("Password harus mengandung minimal 1 karakter spesial");
+            throw new IllegalArgumentException(
+                "Password harus mengandung minimal 1 karakter spesial"
+            );
         }
     }
-    
+
     /**
      * Get admin by username
      */
@@ -142,7 +149,7 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
         return mapToDTO(admin);
     }
-    
+
     /**
      * Get all admins
      */
@@ -152,7 +159,7 @@ public class AuthService {
             .map(this::mapToDTO)
             .collect(Collectors.toList());
     }
-    
+
     /**
      * Deactivate admin
      */
@@ -162,8 +169,9 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
         admin.setIsActive(false);
         adminRepository.save(admin);
+        log.info("Admin deactivated: idAdmin={}", idAdmin);
     }
-    
+
     /**
      * Activate admin
      */
@@ -173,70 +181,72 @@ public class AuthService {
             .orElseThrow(() -> new ResourceNotFoundException("Admin tidak ditemukan"));
         admin.setIsActive(true);
         adminRepository.save(admin);
+        log.info("Admin activated: idAdmin={}", idAdmin);
     }
 
     /**
-     * Request forgot password - Generate token and send email
+     * Request forgot password
      */
     @Transactional
     public void requestPasswordReset(String email) {
-        Admin admin = adminRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("Email tidak terdaftar"));
-        
-        if (!admin.getIsActive()) {
-            throw new RuntimeException("Akun tidak aktif. Hubungi administrator.");
+        // Silent return - not exposing whether email exists
+        Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+        if (adminOpt.isEmpty()) {
+            log.warn("Password reset requested for unregistered email (silent): {}", email);
+            return;
         }
-        
-        // Generate secure random token
+
+        Admin admin = adminOpt.get();
+
+        // Silent return for inactive accounts
+        if (!admin.getIsActive()) {
+            log.warn("Password reset requested for inactive account (silent): {}", email);
+            return;
+        }
+
         String resetToken = generateResetToken();
-        
-        // Set token expiry (1 hour from now)
         Date expiry = new Date(System.currentTimeMillis() + 3600000); // 1 hour
-        
+
         admin.setResetToken(resetToken);
         admin.setResetTokenExpiry(expiry);
         adminRepository.save(admin);
-        
-        // Send reset email
+
         sendPasswordResetEmail(admin, resetToken);
+        log.info("Password reset email sent: idAdmin={}", admin.getIdAdmin());
     }
 
     /**
-     * Reset password using token
+     * Reset password using reset token
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
         Admin admin = adminRepository.findByResetToken(token)
-            .orElseThrow(() -> new RuntimeException("Token reset tidak valid"));
-        
-        // Check if token is expired
-        if (admin.getResetTokenExpiry() == null || 
+            .orElseThrow(() -> new IllegalArgumentException("Token reset tidak valid"));
+
+        if (admin.getResetTokenExpiry() == null ||
             admin.getResetTokenExpiry().before(new Date())) {
-            throw new RuntimeException("Token reset sudah kadaluarsa. Silakan request ulang.");
+            throw new IllegalArgumentException(
+                "Token reset sudah kadaluarsa. Silakan request ulang."
+            );
         }
-        
-        // Validate new password
+
         validatePasswordStrength(newPassword);
-        
-        // Update password
+
         admin.setPassword(passwordEncoder.encode(newPassword));
-        
-        // Clear reset token
         admin.setResetToken(null);
         admin.setResetTokenExpiry(null);
-        
-        // Reset first login flag if needed
         admin.setIsFirstLogin(false);
-        
         adminRepository.save(admin);
+
+        log.info("Password reset berhasil: idAdmin={}", admin.getIdAdmin());
     }
 
     /**
      * Generate secure random reset token
      */
     private String generateResetToken() {
-        return java.util.UUID.randomUUID().toString().replace("-", "") + 
-            System.currentTimeMillis();
+        return java.util.UUID.randomUUID().toString().replace("-", "")
+            + System.currentTimeMillis();
     }
 
     /**
@@ -244,9 +254,8 @@ public class AuthService {
      */
     private void sendPasswordResetEmail(Admin admin, String resetToken) {
         String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
-        
         String subject = "Reset Password - PT. Pandawa Digital Mandiri";
-        
+
         String htmlContent = String.format("""
             <!DOCTYPE html>
             <html>
@@ -356,19 +365,19 @@ public class AuthService {
             </html>
             """,
             admin.getNamaLengkap(),
-            resetLink,
             resetLink
         );
-        
+
         try {
             emailService.sendEmail(admin.getEmail(), subject, htmlContent);
         } catch (Exception e) {
-            throw new RuntimeException("Gagal mengirim email reset password: " + e.getMessage());
+            log.error("Gagal kirim email reset password: idAdmin={}", admin.getIdAdmin(), e);
+            throw new RuntimeException("Gagal mengirim email reset password");
         }
     }
-    
+
     /**
-     * Map to DTO - UPDATED
+     * Map Admin entity to DTO
      */
     private AdminDTO mapToDTO(Admin admin) {
         AdminDTO dto = new AdminDTO();
