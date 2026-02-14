@@ -2,6 +2,9 @@ package com.PPPL.backend.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,11 +14,39 @@ import java.util.Date;
 @Component
 public class JwtUtil {
     
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
+    
     @Value("${jwt.secret}")
     private String secret;
     
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
     private Long expiration;
+    
+    /**
+     * Validate JWT secret on application startup
+     */
+    @PostConstruct
+    public void validateSecret() {
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalStateException(
+                "JWT_SECRET environment variable is not set! " +
+                "Application cannot start without a valid JWT secret."
+            );
+        }
+        
+        if (secret.length() < 64) {
+            throw new IllegalStateException(
+                String.format(
+                    "JWT secret is too weak! Must be at least 64 characters (256-bit). " +
+                    "Current length: %d characters. " +
+                    "Generate a strong secret using: openssl rand -base64 64",
+                    secret.length()
+                )
+            );
+        }
+        
+        log.info("JWT secret validated successfully (length: {} chars)", secret.length());
+    }
     
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -87,7 +118,20 @@ public class JwtUtil {
                 .build()
                 .parseSignedClaims(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT token expired: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            log.warn("Malformed JWT token: {}", e.getMessage());
+            return false;
+        } catch (UnsupportedJwtException e) {
+            log.warn("Unsupported JWT token: {}", e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT claims string is empty: {}", e.getMessage());
+            return false;
+        } catch (JwtException e) {
+            log.warn("JWT validation error: {}", e.getMessage());
             return false;
         }
     }
