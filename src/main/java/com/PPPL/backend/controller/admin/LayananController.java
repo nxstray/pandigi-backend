@@ -5,6 +5,7 @@ import com.PPPL.backend.data.layanan.LayananDTO;
 import com.PPPL.backend.model.enums.KategoriLayanan;
 import com.PPPL.backend.service.admin.LayananService;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,117 +18,64 @@ import java.util.List;
 @RequestMapping("/api/admin/layanan")
 @CrossOrigin(origins = "http://localhost:4200")
 public class LayananController {
-    
+
     @Autowired
     private LayananService layananService;
-    
-    /**
-     * Get all layanan
-     */
+
+    // Get all layanan
     @GetMapping
     public ResponseEntity<ApiResponse<List<LayananDTO>>> getAllLayanan() {
-        try {
-            List<LayananDTO> layanan = layananService.getAllLayanan();
-            return ResponseEntity.ok(ApiResponse.success(layanan));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal memuat data layanan: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(layananService.getAllLayanan()));
     }
-    
-    /**
-     * Get layanan by ID
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<LayananDTO>> getLayananById(@PathVariable Integer id) {
-        try {
-            LayananDTO layanan = layananService.getLayananById(id);
-            return ResponseEntity.ok(ApiResponse.success(layanan));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-    
-    /**
-     * Create new layanan
-     */
-    @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<LayananDTO>> createLayanan(@RequestBody LayananDTO dto) {
-        try {
-            LayananDTO created = layananService.createLayanan(dto);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Layanan berhasil ditambahkan", created));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal menambah layanan: " + e.getMessage()));
-        }
-    }
-    
-    /**
-     * Update layanan
-     */
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<LayananDTO>> updateLayanan(
-            @PathVariable Integer id, 
-            @RequestBody LayananDTO dto) {
-        try {
-            LayananDTO updated = layananService.updateLayanan(id, dto);
-            return ResponseEntity.ok(
-                ApiResponse.success("Layanan berhasil diupdate", updated));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal update layanan: " + e.getMessage()));
-        }
-    }
-    
-    /**
-     * Delete layanan
-     */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteLayanan(@PathVariable Integer id) {
-        try {
-            layananService.deleteLayanan(id);
-            return ResponseEntity.ok(ApiResponse.success("Layanan berhasil dihapus", null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal hapus layanan: " + e.getMessage()));
-        }
-    }
-    
-    /**
-     * Search layanan
-     */
+
+    // Search layanan by keyword &/ kategori
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<LayananDTO>>> searchLayanan(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) KategoriLayanan kategori) {
-        try {
-            List<LayananDTO> result = layananService.searchLayanan(keyword, kategori);
-            return ResponseEntity.ok(ApiResponse.success(result));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal search layanan: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(
+            layananService.searchLayanan(keyword, kategori)));
     }
-    
-    /**
-     * Get layanan by kategori
-     */
+
+    // Get layanan by kategori
     @GetMapping("/kategori/{kategori}")
     public ResponseEntity<ApiResponse<List<LayananDTO>>> getLayananByKategori(
             @PathVariable KategoriLayanan kategori) {
-        try {
-            List<LayananDTO> layanan = layananService.getLayananByKategori(kategori);
-            return ResponseEntity.ok(ApiResponse.success(layanan));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Gagal load layanan: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(
+            layananService.getLayananByKategori(kategori)));
+    }
+
+    // Get layanan by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<LayananDTO>> getLayananById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(layananService.getLayananById(id)));
+    }
+
+    // Create new layanan
+    @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<LayananDTO>> createLayanan(
+            @Valid @RequestBody LayananDTO dto) {
+        LayananDTO created = layananService.createLayanan(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success("Layanan berhasil ditambahkan", created));
+    }
+
+    // Update layanan by ID
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<LayananDTO>> updateLayanan(
+            @PathVariable Integer id,
+            @Valid @RequestBody LayananDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success(
+            "Layanan berhasil diupdate", layananService.updateLayanan(id, dto)));
+    }
+
+    // Delete layanan by ID
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteLayanan(@PathVariable Integer id) {
+        layananService.deleteLayanan(id);
+        return ResponseEntity.ok(ApiResponse.success("Layanan berhasil dihapus", null));
     }
 }
