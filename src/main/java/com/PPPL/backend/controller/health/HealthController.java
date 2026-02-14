@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/public/health")
-@CrossOrigin(origins = "http://localhost:4200")
 public class HealthController {
     
     private final RedisTemplate<String, Object> redisTemplate;

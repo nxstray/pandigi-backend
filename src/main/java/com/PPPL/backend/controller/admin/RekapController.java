@@ -17,7 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/rekap")
-@CrossOrigin(origins = "http://localhost:4200")
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'MANAGER')")
 public class RekapController {
 
